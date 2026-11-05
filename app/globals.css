@@ -1,26 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Valores por defecto; el layout los reemplaza con los de Ajustes */
+  --marca: #be185d;
+  --acento: #6b8f71;
+  --fondo: #faf7f5;
+  --texto-sobre-marca: #ffffff;
+  --texto-sobre-acento: #ffffff;
+  --texto: #2b2420;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-primario: var(--marca);
+  --color-primario-oscuro: color-mix(in oklab, var(--marca) 80%, black);
+  --color-primario-suave: color-mix(in oklab, var(--marca) 10%, var(--fondo));
+  --color-sobre-primario: var(--texto-sobre-marca);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-acento: var(--acento);
+  --color-acento-suave: color-mix(in oklab, var(--acento) 12%, var(--fondo));
+  --color-sobre-acento: var(--texto-sobre-acento);
+
+  --color-fondo: var(--fondo);
+  --color-superficie: color-mix(in oklab, var(--fondo) 40%, white);
+  --color-borde: color-mix(in oklab, var(--texto) 12%, var(--fondo));
+  --color-texto: var(--texto);
+  --color-texto-suave: color-mix(in oklab, var(--texto) 65%, var(--fondo));
+
+  --font-titulos: var(--fuente-titulos);
+  --font-texto: var(--fuente-texto);
+  --radius-tarjeta: 1rem;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: var(--font-texto);
 }

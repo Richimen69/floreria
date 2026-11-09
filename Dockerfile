@@ -7,24 +7,24 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 
-# Compilación
-FROM base AS builder
+# Código fuente con dependencias, todavía sin compilar
+FROM base AS fuente
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Next.js necesita estos valores al compilar
+# Migraciones, seed y crear admin: no necesita compilar Next.js
+FROM fuente AS migrador
+CMD ["npx", "drizzle-kit", "migrate"]
+
+# Compilación (requiere que la base ya tenga las tablas)
+FROM fuente AS builder
 ARG DATABASE_URL
 ARG R2_PUBLIC_URL
 ARG BETTER_AUTH_SECRET
 ARG BETTER_AUTH_URL
 ENV NEXT_TELEMETRY_DISABLED=1
-
 RUN npm run copiar-worker-mapa && npm run build
-
-# Imagen para migraciones, seed y crear admin (tiene el código completo y drizzle-kit)
-FROM builder AS migrador
-CMD ["npx", "drizzle-kit", "migrate"]
 
 # Imagen final, ligera
 FROM base AS runner

@@ -11,6 +11,7 @@ import { SubirImagen } from "@/components/admin/SubirImagen";
 import { Boton } from "@/components/ui/Boton";
 import type { Categoria } from "@/db/schema";
 import type { EstadoFormulario } from "@/lib/validaciones/ajustes";
+import { EncabezadoPagina } from "@/components/admin/EncabezadoPagina";
 
 const estadoInicial: EstadoFormulario = { ok: false, mensaje: "" };
 
@@ -37,32 +38,27 @@ export function FormCategoria({ categoria }: { categoria?: Categoria }) {
 
   return (
     <form onSubmit={enviar}>
-      <div className="sticky top-0 z-10 -mx-8 mb-8 flex items-center justify-between gap-4 border-b border-borde bg-fondo/85 px-8 py-4 backdrop-blur">
-        <div>
-          <Link
-            href="/admin/categorias"
-            className="text-sm text-texto-suave hover:text-primario"
-          >
-            ← Categorías
-          </Link>
-          <h1 className="font-titulos text-2xl font-semibold text-texto">
-            {categoria ? categoria.nombre : "Nueva categoría"}
-          </h1>
-          {estado.mensaje && !estado.ok && (
-            <p className="text-sm text-red-700">{estado.mensaje}</p>
-          )}
-        </div>
-        <div className="flex gap-2">
-          {categoria && (
-            <Boton type="button" variante="peligro" onClick={eliminar}>
-              Eliminar
+      <EncabezadoPagina
+        titulo={categoria ? categoria.nombre : "Nueva categoría"}
+        volver={{ href: "/admin/categorias", texto: "Categorías" }}
+        descripcion={
+          estado.mensaje && !estado.ok ? (
+            <span className="text-red-700">{estado.mensaje}</span>
+          ) : undefined
+        }
+        acciones={
+          <>
+            {categoria && (
+              <Boton type="button" variante="peligro" onClick={eliminar}>
+                Eliminar
+              </Boton>
+            )}
+            <Boton type="submit" disabled={guardando}>
+              {guardando ? "Guardando…" : "Guardar"}
             </Boton>
-          )}
-          <Boton type="submit" disabled={guardando}>
-            {guardando ? "Guardando…" : "Guardar"}
-          </Boton>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="max-w-3xl space-y-6">
         <Seccion

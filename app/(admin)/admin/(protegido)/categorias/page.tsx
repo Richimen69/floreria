@@ -1,31 +1,31 @@
 import Link from 'next/link'
 import { listarCategorias } from '@/server/consultas/categorias'
+import { EncabezadoPagina } from '@/components/admin/EncabezadoPagina'
 
 export default async function CategoriasPage() {
   const lista = await listarCategorias()
 
   return (
     <div>
-      <div className="sticky top-0 z-10 -mx-8 mb-8 flex items-center justify-between gap-4 border-b border-borde bg-fondo/85 px-8 py-4 backdrop-blur">
-        <div>
-          <h1 className="font-titulos text-2xl font-semibold text-texto">Categorías</h1>
-          <p className="text-sm text-texto-suave">Organizan los productos del catálogo.</p>
-        </div>
-        <Link
-          href="/admin/categorias/nueva"
-          className="rounded-full bg-primario px-5 py-2 text-sm font-semibold text-sobre-primario hover:bg-primario-oscuro"
-        >
-          Nueva categoría
-        </Link>
-      </div>
-
+      <EncabezadoPagina
+        titulo="Categorías"
+        descripcion="Organizan los productos del catálogo."
+        acciones={
+          <Link
+            href="/admin/categorias/nueva"
+            className="rounded-full bg-primario px-5 py-2 text-sm font-semibold text-sobre-primario hover:bg-primario-oscuro"
+          >
+            Nueva categoría
+          </Link>
+        }
+      />
       {lista.length === 0 ? (
         <div className="rounded-tarjeta border-2 border-dashed border-borde p-12 text-center">
           <p className="font-titulos text-lg text-texto">Aún no hay categorías</p>
           <p className="mt-1 text-sm text-texto-suave">Crea la primera, por ejemplo "Ramos" o "Arreglos".</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-tarjeta border border-borde bg-superficie shadow-sm">
+        <div className="overflow-x-auto rounded-tarjeta border border-borde bg-superficie shadow-sm">
           <table className="w-full text-sm">
             <thead className="border-b border-borde bg-fondo text-left text-xs uppercase tracking-wider text-texto-suave">
               <tr>

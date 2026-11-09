@@ -4,6 +4,7 @@ import { FormHorarioSemanal } from '@/components/admin/FormHorarioSemanal'
 import { VistaPreviaCalendario } from '@/components/admin/VistaPreviaCalendario'
 import { fechaCorta } from '@/lib/fechas'
 import { listarExcepciones, obtenerConfigCalendario } from '@/server/consultas/calendario'
+import { EncabezadoPagina } from '@/components/admin/EncabezadoPagina'
 
 const NOMBRE_TIPO = { especial: 'Horario especial', no_disponible: 'Aún no disponible', cerrado: 'Cerrado' }
 
@@ -12,6 +13,7 @@ export default async function CalendarioPage() {
 
   return (
     <div>
+      
       <div className="sticky top-0 z-10 -mx-8 mb-8 border-b border-borde bg-fondo/85 px-8 py-4 backdrop-blur">
         <h1 className="font-titulos text-2xl font-semibold text-texto">Calendario de entregas</h1>
         <p className="text-sm text-texto-suave">Horarios, cupos y fechas especiales. Todas las horas son de Acapulco.</p>

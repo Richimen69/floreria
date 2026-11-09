@@ -2,6 +2,7 @@ import Link from "next/link";
 import { listarProductosAdmin } from "@/server/consultas/productos";
 import { formatearPrecio } from "@/lib/utils";
 import { fechaCorta } from "@/lib/fechas";
+import { EncabezadoPagina } from "@/components/admin/EncabezadoPagina";
 
 function Etiqueta({
   children,
@@ -29,22 +30,18 @@ export default async function ProductosPage() {
 
   return (
     <div>
-      <div className="sticky top-0 z-10 -mx-8 mb-8 flex items-center justify-between gap-4 border-b border-borde bg-fondo/85 px-8 py-4 backdrop-blur">
-        <div>
-          <h1 className="font-titulos text-2xl font-semibold text-texto">
-            Productos
-          </h1>
-          <p className="text-sm text-texto-suave">
-            {lista.length} producto(s) en el catálogo.
-          </p>
-        </div>
-        <Link
-          href="/admin/productos/nuevo"
-          className="rounded-full bg-primario px-5 py-2 text-sm font-semibold text-sobre-primario hover:bg-primario-oscuro"
-        >
-          Nuevo producto
-        </Link>
-      </div>
+      <EncabezadoPagina
+        titulo="Productos"
+        descripcion={`${lista.length} producto(s) en el catálogo.`}
+        acciones={
+          <Link
+            href="/admin/productos/nuevo"
+            className="rounded-full bg-primario px-5 py-2 text-sm font-semibold text-sobre-primario hover:bg-primario-oscuro"
+          >
+            Nuevo producto
+          </Link>
+        }
+      />
 
       {lista.length === 0 ? (
         <div className="rounded-tarjeta border-2 border-dashed border-borde p-12 text-center">

@@ -16,6 +16,7 @@ import {
   type OpcionComplemento,
 } from "@/components/admin/SelectorComplementos";
 import type { ProductoAdmin } from "@/server/consultas/productos";
+import { EncabezadoPagina } from "@/components/admin/EncabezadoPagina";
 
 const estadoInicial: EstadoFormulario = { ok: false, mensaje: "" };
 
@@ -100,32 +101,27 @@ export function FormProducto({
 
   return (
     <form onSubmit={enviar}>
-      <div className="sticky top-0 z-10 -mx-8 mb-8 flex items-center justify-between gap-4 border-b border-borde bg-fondo/85 px-8 py-4 backdrop-blur">
-        <div>
-          <Link
-            href="/admin/productos"
-            className="text-sm text-texto-suave hover:text-primario"
-          >
-            ← Productos
-          </Link>
-          <h1 className="font-titulos text-2xl font-semibold text-texto">
-            {producto ? producto.nombre : "Nuevo producto"}
-          </h1>
-          {estado.mensaje && !estado.ok && (
-            <p className="text-sm text-red-700">{estado.mensaje}</p>
-          )}
-        </div>
-        <div className="flex gap-2">
-          {producto && (
-            <Boton type="button" variante="peligro" onClick={eliminar}>
-              Eliminar
+      <EncabezadoPagina
+        titulo={producto ? producto.nombre : "Nuevo producto"}
+        volver={{ href: "/admin/productos", texto: "Productos" }}
+        descripcion={
+          estado.mensaje && !estado.ok ? (
+            <span className="text-red-700">{estado.mensaje}</span>
+          ) : undefined
+        }
+        acciones={
+          <>
+            {producto && (
+              <Boton type="button" variante="peligro" onClick={eliminar}>
+                Eliminar
+              </Boton>
+            )}
+            <Boton type="submit" disabled={guardando}>
+              {guardando ? "Guardando…" : "Guardar"}
             </Boton>
-          )}
-          <Boton type="submit" disabled={guardando}>
-            {guardando ? "Guardando…" : "Guardar"}
-          </Boton>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="max-w-4xl space-y-6">
         <Seccion

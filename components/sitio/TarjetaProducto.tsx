@@ -2,7 +2,8 @@ import Image from "next/image";
 import { formatearPrecio } from "@/lib/utils";
 import type { ProductoPublico } from "@/server/consultas/catalogo";
 import Link from "next/link";
-import { fechaCorta } from '@/lib/fechas'
+import { fechaCorta } from "@/lib/fechas";
+import { BotonAgregar } from "@/components/sitio/BotonAgregar";
 
 export function TarjetaProducto({
   producto,
@@ -82,17 +83,13 @@ export function TarjetaProducto({
             Pídelo con {producto.diasAnticipacion} día(s) de anticipación
           </p>
         )}
-        <button
-          type="button"
-          disabled={!producto.sePuedePedir}
-          className="mt-2 rounded-full bg-primario px-4 py-2 text-sm font-semibold text-sobre-primario transition-colors hover:bg-primario-oscuro disabled:cursor-not-allowed disabled:bg-borde disabled:text-texto-suave"
-        >
-          {producto.sePuedePedir
-            ? "Agregar"
-            : producto.sinExistencias
-              ? "Sin existencias"
-              : "No disponible"}
-        </button>
+        <BotonAgregar
+          productoId={producto.id}
+          disponible={producto.sePuedePedir}
+          textoNoDisponible={
+            producto.sinExistencias ? "Sin existencias" : "No disponible"
+          }
+        />
       </div>
     </article>
   );

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql, inArray, desc, notInArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import {
   categorias,
@@ -188,4 +188,112 @@ export async function obtenerProductoPorSlug(slug: string) {
     categorias: cats,
     complementos: complementos.map((p) => conDisponibilidad(p, hoy, temporada)),
   };
+}
+// Productos del carrito (sin precio: el precio depende de la fecha elegida)
+export async function obtenerProductosPorIds(ids: number[]) {
+  "use cache";
+  cacheTag("productos", "categorias");
+  if (ids.length === 0) return [];
+
+  return db
+    .select(camposProducto)
+    .from(productos)
+    .where(
+      and(
+        inArray(productos.id, ids),
+        eq(productos.activo, true),
+        enCategoriaVisible,
+      ),
+    );
+}
+
+// Complementos sugeridos de los productos del carrito, sin repetir
+export async function complementosDe(ids: number[]) {
+  "use cache";
+  cacheTag("productos", "categorias");
+  if (ids.length === 0) return [];
+
+  const filas = await db
+    .select(camposProducto)
+    .from(productoComplementos)
+    .innerJoin(productos, eq(productoComplementos.complementoId, productos.id))
+    .where(
+      and(
+        inArray(productoComplementos.productoId, ids),
+        eq(productos.activo, true),
+        enCategoriaVisible,
+      ),
+    )
+    .orderBy(asc(productoComplementos.orden));
+
+  const vistos = new Set<number>();
+  return filas.filter((f) => {
+    if (vistos.has(f.id)) return false;
+    vistos.add(f.id);
+    return true;
+  });
+}
+
+export async function productosRecomendados(productoId: number, limite = 4) {
+  "use cache";
+  cacheTag("productos", "categorias", "temporadas");
+  cacheLife("hours");
+
+  const hoy = hoyEnAcapulco();
+  const temporada = await temporadaParaFecha(hoy);
+
+  // Comparte al menos una categoría con el producto
+  const mismaCategoria = sql<boolean>`EXISTS (
+    SELECT 1 FROM producto_categorias a
+    JOIN producto_categorias b ON a.categoria_id = b.categoria_id
+    WHERE a.producto_id = ${productos.id} AND b.producto_id = ${productoId}
+  )`;
+
+  // No es uno de sus complementos (esos ya se muestran aparte)
+  const noEsComplemento = sql<boolean>`NOT EXISTS (
+    SELECT 1 FROM producto_complementos pc
+    WHERE pc.producto_id = ${productoId} AND pc.complemento_id = ${productos.id}
+  )`;
+
+  const base = and(
+    eq(productos.activo, true),
+    enCategoriaVisible,
+    ne(productos.id, productoId),
+    noEsComplemento,
+  );
+
+  const similares = await db
+    .select(camposProducto)
+    .from(productos)
+    .where(and(base, mismaCategoria))
+    .orderBy(
+      desc(productos.disponible),
+      desc(productos.destacado),
+      asc(productos.orden),
+      asc(productos.nombre),
+    )
+    .limit(limite);
+
+  // Si faltan, se completa con los Productos Top
+  let resultado = similares;
+  if (similares.length < limite) {
+    const yaIncluidos = similares.map((p) => p.id);
+    const relleno = await db
+      .select(camposProducto)
+      .from(productos)
+      .where(
+        and(
+          base,
+          eq(productos.destacado, true),
+          yaIncluidos.length > 0
+            ? notInArray(productos.id, yaIncluidos)
+            : undefined,
+        ),
+      )
+      .orderBy(desc(productos.disponible), asc(productos.orden))
+      .limit(limite - similares.length);
+    resultado = [...similares, ...relleno];
+  }
+
+  return resultado.map((p) => conDisponibilidad(p, hoy, temporada));
 }

@@ -7,8 +7,12 @@ import { formatearPrecio } from "@/lib/utils";
 import { enlaceWhatsapp } from "@/lib/whatsapp";
 import { obtenerAjustes } from "@/server/consultas/ajustes";
 import { TarjetaProducto } from "@/components/sitio/TarjetaProducto";
-import { obtenerProductoPorSlug } from "@/server/consultas/catalogo";
 import { fechaCorta } from "@/lib/fechas";
+import { BotonAgregar } from "@/components/sitio/BotonAgregar";
+import {
+  obtenerProductoPorSlug,
+  productosRecomendados,
+} from "@/server/consultas/catalogo";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -35,6 +39,7 @@ async function Detalle({ params }: Props) {
     obtenerAjustes(),
   ]);
   if (!p) notFound();
+  const recomendados = await productosRecomendados(p.id);
   const categoria = p.categorias[0];
 
   const precio = p.precioActualCentavos;
@@ -122,13 +127,14 @@ async function Detalle({ params }: Props) {
           )}
 
           <div className="mt-2 flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              disabled={!p.sePuedePedir}
-              className="flex-1 rounded-full bg-primario px-6 py-3 text-sm font-semibold text-sobre-primario hover:bg-primario-oscuro disabled:cursor-not-allowed disabled:bg-borde disabled:text-texto-suave"
-            >
-              {p.sePuedePedir ? "Agregar al carrito" : "No disponible"}
-            </button>
+            <BotonAgregar
+              productoId={p.id}
+              disponible={p.sePuedePedir}
+              textoNoDisponible={
+                p.sinExistencias ? "Sin existencias" : "No disponible"
+              }
+              grande
+            />
             {whatsapp && (
               <a
                 href={whatsapp}
@@ -150,6 +156,18 @@ async function Detalle({ params }: Props) {
           <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
             {p.complementos.map((c) => (
               <TarjetaProducto key={c.id} producto={c} />
+            ))}
+          </div>
+        </section>
+      )}
+      {recomendados.length > 0 && (
+        <section className="mt-16">
+          <h2 className="mb-5 font-titulos text-2xl font-semibold text-texto">
+            También te puede gustar
+          </h2>
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+            {recomendados.map((r) => (
+              <TarjetaProducto key={r.id} producto={r} />
             ))}
           </div>
         </section>

@@ -9,6 +9,7 @@ import { Ayuda, Etiqueta, claseInput } from "@/components/ui/Campo";
 import type { AjustesSitio } from "@/db/schema";
 import type { EstadoFormulario } from "@/lib/validaciones/ajustes";
 import { Campo, Seccion } from "@/components/admin/Formulario";
+import { EncabezadoPagina } from "@/components/admin/EncabezadoPagina";
 
 const estadoInicial: EstadoFormulario = { ok: false, mensaje: "" };
 

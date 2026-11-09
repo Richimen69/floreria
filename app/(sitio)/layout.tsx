@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { EnlacesNav, NavSitio } from "@/components/sitio/NavSitio";
 import { enlaceWhatsapp } from "@/lib/whatsapp";
 import { obtenerAjustes } from "@/server/consultas/ajustes";
+import { IconoCarrito } from "@/components/sitio/IconoCarrito";
 
 export async function generateMetadata(): Promise<Metadata> {
   const a = await obtenerAjustes();
@@ -56,26 +57,7 @@ export default async function LayoutSitio({
             <Suspense fallback={<EnlacesNav pathname={null} />}>
               <NavSitio />
             </Suspense>
-            <Link
-              href="/carrito"
-              aria-label="Carrito"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-borde text-texto hover:border-primario hover:text-primario"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.8}
-                className="h-5 w-5"
-                aria-hidden
-              >
-                <path
-                  d="M6 7h12l-1 13H7L6 7zM9 7a3 3 0 016 0"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </Link>
+            <IconoCarrito />
           </div>
         </div>
       </header>

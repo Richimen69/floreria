@@ -32,10 +32,10 @@ export default async function InicioPage() {
               sizes="100vw"
               className="object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/35 to-black/10" />
+            <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/35 to-black/10" />
           </>
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primario-suave via-fondo to-acento-suave" />
+          <div className="absolute inset-0 bg-linear-to-br from-primario-suave via-fondo to-acento-suave" />
         )}
 
         <div

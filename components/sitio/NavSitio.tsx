@@ -8,13 +8,14 @@ const enlaces = [
   { href: '/catalogo', texto: 'Catálogo' },
 ]
 
-export function NavSitio() {
-  const pathname = usePathname()
-
+// Solo dibuja los enlaces; no lee la URL, así que sirve como respaldo
+export function EnlacesNav({ pathname }: { pathname: string | null }) {
   return (
     <nav className="flex items-center gap-1">
       {enlaces.map((e) => {
-        const activo = e.href === '/' ? pathname === '/' : pathname.startsWith(e.href)
+        const activo =
+          pathname !== null &&
+          (e.href === '/' ? pathname === '/' : pathname.startsWith(e.href))
         return (
           <Link
             key={e.href}
@@ -29,4 +30,9 @@ export function NavSitio() {
       })}
     </nav>
   )
+}
+
+export function NavSitio() {
+  const pathname = usePathname()
+  return <EnlacesNav pathname={pathname} />
 }

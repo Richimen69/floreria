@@ -36,6 +36,34 @@
       "when": 1793904736855,
       "tag": "0004_unusual_marvex",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794192933454,
+      "tag": "0005_varias-categorias",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794195205505,
+      "tag": "0006_ofertas-con-vigencia",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794198458084,
+      "tag": "0007_temporadas",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794199292904,
+      "tag": "0008_calendario",
+      "breakpoints": true
     }
   ]
 }

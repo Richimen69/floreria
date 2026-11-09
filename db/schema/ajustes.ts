@@ -40,7 +40,7 @@ export const ajustesSitio = pgTable(
     facebookUrl: text("facebook_url"),
     instagramUrl: text("instagram_url"),
     tiktokUrl: text("tiktok_url"),
-
+    horizonteDias: integer("horizonte_dias").notNull().default(60),
     actualizadoEn: timestamp("actualizado_en", { withTimezone: true })
       .notNull()
       .defaultNow()

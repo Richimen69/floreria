@@ -5,7 +5,7 @@ import { updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { db } from '@/db'
-import { productos } from '@/db/schema'
+import { productoCategorias, productoComplementos, productos } from '@/db/schema'
 import { requireAdmin } from '@/lib/permisos'
 import { esquemaProducto, leerFormProducto } from '@/lib/validaciones/producto'
 import type { EstadoFormulario } from '@/lib/validaciones/ajustes'
@@ -26,11 +26,11 @@ export async function guardarProducto(
     }
   }
 
-  const datos = resultado.data
+  const { producto, categoriaIds, complementoIds } = resultado.data
 
   const condicion = id
-    ? and(eq(productos.slug, datos.slug), ne(productos.id, id))
-    : eq(productos.slug, datos.slug)
+    ? and(eq(productos.slug, producto.slug), ne(productos.id, id))
+    : eq(productos.slug, producto.slug)
   const [duplicado] = await db.select({ id: productos.id }).from(productos).where(condicion).limit(1)
   if (duplicado) {
     return {
@@ -40,11 +40,29 @@ export async function guardarProducto(
     }
   }
 
-  if (id) {
-    await db.update(productos).set(datos).where(eq(productos.id, id))
-  } else {
-    await db.insert(productos).values(datos)
-  }
+  // Todo o nada: el producto y sus relaciones se guardan juntos
+  await db.transaction(async (tx) => {
+    let productoId: number
+
+    if (id) {
+      await tx.update(productos).set(producto).where(eq(productos.id, id))
+      productoId = id
+    } else {
+      const [nuevo] = await tx.insert(productos).values(producto).returning({ id: productos.id })
+      productoId = nuevo.id
+    }
+
+    await tx.delete(productoCategorias).where(eq(productoCategorias.productoId, productoId))
+    await tx.insert(productoCategorias).values(categoriaIds.map((categoriaId) => ({ productoId, categoriaId })))
+
+    await tx.delete(productoComplementos).where(eq(productoComplementos.productoId, productoId))
+    const complementos = complementoIds.filter((c) => c !== productoId)
+    if (complementos.length > 0) {
+      await tx
+        .insert(productoComplementos)
+        .values(complementos.map((complementoId, orden) => ({ productoId, complementoId, orden })))
+    }
+  })
 
   updateTag('productos')
   redirect('/admin/productos')

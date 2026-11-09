@@ -1,0 +1,6 @@
+{$DOMINIO}, admin.{$DOMINIO} {
+	encode zstd gzip
+	# Que Google no indexe el servidor de pruebas
+	header X-Robots-Tag "noindex, nofollow"
+	reverse_proxy app:3000
+}

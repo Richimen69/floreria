@@ -73,7 +73,7 @@ export default async function InicioPage() {
                   rel="noopener noreferrer"
                   className="rounded-full bg-acento px-6 py-3 text-sm font-semibold text-sobre-acento hover:opacity-90"
                 >
-                  Pedir por WhatsApp
+                  Más información
                 </a>
               )}
             </div>

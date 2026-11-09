@@ -8,7 +8,6 @@ services:
       POSTGRES_DB: floreria
     volumes:
       - pgdata:/var/lib/postgresql/data
-    # Solo accesible desde el propio servidor (la compilación lo necesita)
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
@@ -27,6 +26,8 @@ services:
         BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
         BETTER_AUTH_URL: ${BETTER_AUTH_URL}
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:3005:3000"
     env_file: .env
     environment:
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/floreria
@@ -46,23 +47,5 @@ services:
       postgres:
         condition: service_healthy
 
-  caddy:
-    image: caddy:2
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    environment:
-      DOMINIO: ${DOMINIO}
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - app
-
 volumes:
   pgdata:
-  caddy_data:
-  caddy_config:

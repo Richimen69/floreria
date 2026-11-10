@@ -25,12 +25,14 @@ services:
         R2_PUBLIC_URL: ${R2_PUBLIC_URL}
         BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
         BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+        BETTER_AUTH_TRUSTED_ORIGINS: ${BETTER_AUTH_TRUSTED_ORIGINS}
     restart: unless-stopped
     ports:
       - "127.0.0.1:3005:3000"
     env_file: .env
     environment:
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/floreria
+      BETTER_AUTH_TRUSTED_ORIGINS: ${BETTER_AUTH_TRUSTED_ORIGINS}
     depends_on:
       postgres:
         condition: service_healthy

@@ -5,9 +5,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   cacheComponents: true,
   experimental: {
-    serverActions: {
-      bodySizeLimit: "6mb",
-    },
+    serverActions: { bodySizeLimit: "6mb" },
   },
   images: {
     remotePatterns: [new URL(`${process.env.R2_PUBLIC_URL}/**`)],

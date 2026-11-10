@@ -102,7 +102,7 @@ export default async function InicioPage() {
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
             {destacados.map((p) => (
-              <TarjetaProducto key={p.id} producto={p} destacado />
+              <TarjetaProducto key={p.id} producto={p} destacado conTransicion />
             ))}
           </div>
         </section>

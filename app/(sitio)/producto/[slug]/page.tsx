@@ -68,7 +68,7 @@ async function Detalle({ params }: Props) {
       </nav>
 
       <div className="grid gap-8 md:grid-cols-2 md:gap-12">
-        <GaleriaProducto imagenes={p.imagenes} nombre={p.nombre} />
+        <GaleriaProducto id={p.id} imagenes={p.imagenes} nombre={p.nombre} />
 
         <div className="flex flex-col gap-5">
           <div>

@@ -4,16 +4,29 @@ import type { ProductoPublico } from "@/server/consultas/catalogo";
 import Link from "next/link";
 import { fechaCorta } from "@/lib/fechas";
 import { BotonAgregar } from "@/components/sitio/BotonAgregar";
+import { ViewTransition } from "react";
 
 export function TarjetaProducto({
   producto,
   destacado = false,
+  conTransicion = false,
 }: {
   producto: ProductoPublico;
   destacado?: boolean;
+  conTransicion?: boolean;
 }) {
   const imagen = producto.imagenes[0];
   const enOferta = producto.enOferta;
+
+  const foto = imagen && (
+    <Image
+      src={imagen}
+      alt={producto.nombre}
+      fill
+      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+      className={`object-cover transition-transform duration-500 group-hover:scale-105 ${!producto.sePuedePedir ? "opacity-60 grayscale" : ""}`}
+    />
+  );
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-tarjeta border border-borde bg-superficie transition-shadow hover:shadow-md">
@@ -21,14 +34,15 @@ export function TarjetaProducto({
         href={`/producto/${producto.slug}`}
         className="relative aspect-square overflow-hidden bg-primario-suave"
       >
-        {imagen && (
-          <Image
-            src={imagen}
-            alt={producto.nombre}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className={`object-cover transition-transform duration-500 group-hover:scale-105 ${!producto.sePuedePedir ? "opacity-60 grayscale" : ""}`}
-          />
+        {conTransicion && foto ? (
+          <ViewTransition
+            name={`foto-producto-${producto.id}`}
+            share="foto-producto"
+          >
+            {foto}
+          </ViewTransition>
+        ) : (
+          foto
         )}
         <div className="absolute top-2 left-2 flex flex-wrap gap-1.5">
           {destacado && (

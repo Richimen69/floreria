@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 import { EnlacesNav, NavSitio } from "@/components/sitio/NavSitio";
 import { enlaceWhatsapp } from "@/lib/whatsapp";
 import { obtenerAjustes } from "@/server/consultas/ajustes";
@@ -62,7 +62,9 @@ export default async function LayoutSitio({
         </div>
       </header>
 
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        <ViewTransition default="cambio-pagina">{children}</ViewTransition>
+      </main>
 
       <footer className="mt-16 border-t border-borde bg-superficie">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-3 sm:px-6">

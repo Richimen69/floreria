@@ -113,6 +113,8 @@ export async function crearPedido(formData: FormData): Promise<ResultadoPedido> 
           zonaNombre: colonia.zona,
           calle: datos.calle,
           referencias: datos.referencias,
+          entregaLatitud: datos.entregaLatitud,
+          entregaLongitud: datos.entregaLongitud,
           tipoLugar: datos.tipoLugar,
           nombreLugar: datos.nombreLugar,
           detalleLugar: datos.detalleLugar,

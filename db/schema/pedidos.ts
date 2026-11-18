@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { boolean, date, index, integer, pgEnum, pgSequence, pgTable, serial, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { doublePrecision, boolean, date, index, integer, pgEnum, pgSequence, pgTable, serial, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 import { colonias } from './envios'
 import { productos } from './productos'
 import { user } from './auth'
@@ -35,6 +35,9 @@ export const pedidos = pgTable(
         compradorNombre: text('comprador_nombre').notNull(),
         compradorTelefono: text('comprador_telefono').notNull(),
         compradorEmail: text('comprador_email'),
+
+        entregaLatitud: doublePrecision('entrega_latitud'),
+        entregaLongitud: doublePrecision('entrega_longitud'),
 
         versionPrivacidad: integer('version_privacidad'),
         versionTerminos: integer('version_terminos'),

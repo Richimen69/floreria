@@ -1,6 +1,13 @@
 import { z } from 'zod'
 import { LUGARES, TIPOS_LUGAR, detalleObligatorio } from '@/lib/lugares'
 
+const coordenada = (min: number, max: number) =>
+    z
+        .string()
+        .optional()
+        .transform((v) => (v ? Number(v) : null))
+        .refine((v) => v === null || (Number.isFinite(v) && v >= min && v <= max), 'La ubicación marcada está fuera de nuestra zona de entrega')
+
 const telefono = (mensaje: string) =>
     z.string().transform((v) => v.replace(/\D/g, '')).refine((v) => v.length === 10, mensaje)
 const opcional = (max: number) =>
@@ -15,6 +22,8 @@ const checkbox = z.string().optional().transform((v) => v === 'on')
 // Paso 1: Entrega
 export const esquemaEntrega = z
     .object({
+        entregaLatitud: coordenada(16.5, 17.3),
+        entregaLongitud: coordenada(-100.3, -99.4),
         destinatarioNombre: z.string().trim().min(2, '¿A quién se lo entregamos?').max(80),
         destinatarioTelefono: telefono('Escribe el celular de 10 dígitos de quien recibe'),
         coloniaId: z.coerce.number({ error: 'Elige la colonia de la lista' }).int().positive('Elige la colonia de la lista'),
@@ -35,6 +44,9 @@ export const esquemaEntrega = z
         }
         if (lugar.detalle && detalleObligatorio(d.tipoLugar, d.relacionLugar) && !d.detalleLugar) {
             ctx.addIssue({ code: 'custom', path: ['detalleLugar'], message: `Escribe ${lugar.detalle.etiqueta.toLowerCase()}` })
+        }
+        if ((d.entregaLatitud === null) !== (d.entregaLongitud === null)) {
+            ctx.addIssue({ code: 'custom', path: ['entregaLatitud'], message: 'Vuelve a marcar la ubicación en el mapa' })
         }
     })
     .transform((d) => (d.tipoLugar === 'casa' ? { ...d, nombreLugar: null, detalleLugar: null, relacionLugar: null } : d))

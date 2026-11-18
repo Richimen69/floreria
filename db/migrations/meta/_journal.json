@@ -148,6 +148,20 @@
       "when": 1795025128490,
       "tag": "0020_aceptacion-legales",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795040523858,
+      "tag": "0021_ubicacion-entrega",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795044954465,
+      "tag": "0022_video-producto",
+      "breakpoints": true
     }
   ]
 }

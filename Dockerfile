@@ -29,6 +29,7 @@ RUN npm run copiar-worker-mapa && npm run build
 # Imagen final
 FROM base AS runner
 WORKDIR /app
+RUN apk add --no-cache ffmpeg
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 RUN addgroup -S -g 1001 nodejs && adduser -S -u 1001 nextjs
 COPY --from=builder /app/public ./public

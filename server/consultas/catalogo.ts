@@ -26,6 +26,9 @@ const camposProducto = {
   existencias: productos.existencias,
   ofertaDesde: productos.ofertaDesde,
   ofertaHasta: productos.ofertaHasta,
+  videoUrl: productos.videoUrl,
+  videoPosterUrl: productos.videoPosterUrl,
+  videoEstado: productos.videoEstado,
 };
 
 // Un producto se muestra solo si está en al menos una categoría visible

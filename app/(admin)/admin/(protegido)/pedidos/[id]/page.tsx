@@ -11,6 +11,8 @@ import { obtenerPedidoAdmin } from '@/server/consultas/pedidos-admin'
 import { AccionesPedido } from '@/components/admin/AccionesPedido'
 import { ESTADOS_PAGO, ESTADOS_TRABAJO } from '@/lib/pedidos'
 import { urlTemporalPrivada } from '@/lib/r2'
+import { MapaInteractivo } from '@/components/sitio/MapaInteractivo'
+import { obtenerAjustes } from '@/server/consultas/ajustes'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -46,6 +48,9 @@ async function Contenido({ params }: Props) {
 
     const lugar = LUGARES[p.tipoLugar]
 
+    const ajustes = await obtenerAjustes()
+    const hayUbicacion = p.entregaLatitud != null && p.entregaLongitud != null
+
     return (
         <div>
             <EncabezadoPagina
@@ -77,6 +82,38 @@ async function Contenido({ params }: Props) {
                                 Aceptó términos v{p.versionTerminos ?? '–'}, cancelaciones v{p.versionCancelaciones ?? '–'} y
                                 privacidad v{p.versionPrivacidad ?? '–'} el {formatoFechaHora.format(p.legalesAceptadosEn)}
                             </p>
+                        )}
+
+                        {hayUbicacion ? (
+                            <div className="space-y-2">
+                                <MapaInteractivo
+                                    latitud={p.entregaLatitud!}
+                                    longitud={p.entregaLongitud!}
+                                    nombre={`Entrega para ${p.destinatarioNombre ?? ''}`}
+                                    direccion={`${p.calle ?? ''}, ${p.coloniaNombre ?? ''}`}
+                                    colores={{ primario: ajustes.colorPrimario, acento: ajustes.colorAcento, fondo: ajustes.colorFondo }}
+                                />
+                                <div className="flex flex-wrap gap-2">
+                                    <a
+                                        href={`https://www.google.com/maps/dir/?api=1&destination=${p.entregaLatitud},${p.entregaLongitud}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="rounded-full border border-borde px-3 py-1.5 text-xs font-semibold text-texto hover:border-primario"
+                                    >
+                                        Ruta en Google Maps
+                                    </a>
+                                    <a
+                                        href={`https://waze.com/ul?ll=${p.entregaLatitud},${p.entregaLongitud}&navigate=yes`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="rounded-full border border-borde px-3 py-1.5 text-xs font-semibold text-texto hover:border-primario"
+                                    >
+                                        Abrir en Waze
+                                    </a>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-xs text-texto-suave">El cliente no marcó ubicación en el mapa; guíate por la dirección y referencias.</p>
                         )}
                     </Seccion>
 

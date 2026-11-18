@@ -18,7 +18,7 @@ import { crearPedido } from '@/server/acciones/pedidos'
 import type { ColoniaEncontrada } from '@/server/acciones/colonias-publico'
 import { AvisoAnticipacion } from '@/components/sitio/AvisoAnticipacion'
 import { CasillaLegales } from '@/components/sitio/CasillaLegales'
-
+import { SelectorUbicacion } from '@/components/sitio/SelectorUbicacion'
 
 const claseCampo =
     'w-full rounded-xl border border-borde bg-superficie px-3.5 py-2.5 text-base text-texto outline-none focus:border-primario focus:ring-4 focus:ring-primario/15 disabled:opacity-50 sm:text-sm'
@@ -260,6 +260,7 @@ export function VistaCheckout({ whatsapp, usuario, pago, legales }: Props) {
                                 </div>
                                 <SelectorColonia seleccionada={colonia} onSeleccionar={setColonia} error={err('coloniaId')} />
                                 <Campo id="referencias" etiqueta="Entre calles y referencias" placeholder="Frente a la farmacia, portón negro" ayuda="Ayuda al repartidor a encontrar el lugar" />
+                                <SelectorUbicacion error={err('entregaLatitud') ?? err('entregaLongitud')} />
                             </div>
 
                             <fieldset>
@@ -328,6 +329,7 @@ export function VistaCheckout({ whatsapp, usuario, pago, legales }: Props) {
                                     </div>
                                 )
                             )}
+
                         </Bloque>
 
                         <Bloque titulo="Fecha y horario de entrega" descripcion="Elige el día y la franja.">

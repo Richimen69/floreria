@@ -27,6 +27,11 @@ export const productos = pgTable("productos", {
     .array()
     .notNull()
     .default(sql`'{}'::text[]`),
+  videoUrl: text('video_url'),
+  videoPosterUrl: text('video_poster_url'),
+  videoEstado: text('video_estado'),         
+  videoError: text('video_error'),
+  videoIniciadoEn: timestamp('video_iniciado_en', { withTimezone: true }),
 
   diasAnticipacion: integer("dias_anticipacion").notNull().default(0),
   controlarExistencias: boolean("controlar_existencias")

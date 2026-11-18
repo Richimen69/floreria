@@ -10,6 +10,7 @@ import { Ayuda, Etiqueta, claseInput } from "@/components/ui/Campo";
 import { centavosATexto } from "@/lib/utils";
 import type { Categoria, Producto } from "@/db/schema";
 import type { EstadoFormulario } from "@/lib/validaciones/ajustes";
+import { SubirVideo } from '@/components/admin/SubirVideo'
 import { useState } from "react";
 import {
   SelectorComplementos,
@@ -188,6 +189,18 @@ export function FormProducto({
           <GaleriaImagenes
             valorInicial={producto?.imagenes ?? []}
             error={err("imagenes")}
+          />
+        </Seccion>
+
+        <Seccion titulo="Video" descripcion="Un clip corto que aparece al final del álbum.">
+          <SubirVideo
+            productoId={producto?.id}
+            inicial={{
+              estado: producto?.videoEstado ?? null,
+              url: producto?.videoUrl ?? null,
+              poster: producto?.videoPosterUrl ?? null,
+              error: producto?.videoError ?? null,
+            }}
           />
         </Seccion>
 

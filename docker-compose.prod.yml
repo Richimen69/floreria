@@ -1,5 +1,4 @@
-# Nombre fijo del proyecto: evita que choque con el de pruebas en el mismo servidor
-name: floreria-produccion
+name: floreria-pruebas
 
 services:
   postgres:
@@ -11,9 +10,8 @@ services:
       POSTGRES_DB: floreria
     volumes:
       - pgdata:/var/lib/postgresql/data
-    # 5433 para no chocar con la base de pruebas (5432); solo accesible desde el propio servidor
     ports:
-      - "127.0.0.1:5433:5432"
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d floreria"]
       interval: 5s
@@ -25,7 +23,7 @@ services:
       context: .
       network: host
       args:
-        DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@127.0.0.1:5433/floreria
+        DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@127.0.0.1:5432/floreria
         R2_PUBLIC_URL: ${R2_PUBLIC_URL}
         BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
         BETTER_AUTH_URL: ${BETTER_AUTH_URL}
@@ -36,7 +34,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    # Sin "ports": la app no se publica; solo el túnel llega a ella
 
   migrar:
     build:
@@ -50,14 +47,23 @@ services:
       postgres:
         condition: service_healthy
 
-  tunel:
-    image: cloudflare/cloudflared:2026.11.1
+  caddy:
+    image: caddy:2
     restart: unless-stopped
-    command: tunnel --no-autoupdate run
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
     environment:
-      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+      DOMINIO: ${DOMINIO}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
     depends_on:
       - app
 
 volumes:
   pgdata:
+  caddy_data:
+  caddy_config:

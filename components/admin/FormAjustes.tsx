@@ -231,6 +231,14 @@ export function FormAjustes({ ajustes }: { ajustes: AjustesSitio }) {
               ayuda="Con lada de país, sin espacios"
             />
             <Campo
+              nombre="correoAvisos"
+              etiqueta="Correo para avisos de pedidos"
+              tipo="email"
+              valor={ajustes.correoAvisos}
+              error={err('correoAvisos')}
+              ayuda="Aquí llegan los avisos de pedidos nuevos y comprobantes. No se muestra en el sitio"
+            />
+            <Campo
               nombre="telefono"
               etiqueta="Teléfono"
               valor={ajustes.telefono}
@@ -275,6 +283,27 @@ export function FormAjustes({ ajustes }: { ajustes: AjustesSitio }) {
               placeholder="16.8531, -99.8237"
               ayuda="En Google Maps, clic derecho sobre la florería y copia los números que aparecen arriba"
               ancho
+            />
+          </Seccion>
+
+          <Seccion titulo="Pago por transferencia" descripcion="Datos que verá el cliente para pagar.">
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-borde p-4 md:col-span-2">
+              <input type="checkbox" name="transferenciaActiva" defaultChecked={ajustes.transferenciaActiva} className="mt-0.5 h-4 w-4 accent-primario" />
+              <span>
+                <span className="block text-sm font-medium text-texto">Aceptar pagos por transferencia</span>
+                <span className="block text-xs text-texto-suave">Si está apagado, el sitio no permitirá confirmar pedidos</span>
+              </span>
+            </label>
+            <Campo nombre="banco" etiqueta="Banco" valor={ajustes.banco} error={err('banco')} placeholder="Ej. BBVA" />
+            <Campo nombre="titularCuenta" etiqueta="Titular de la cuenta" valor={ajustes.titularCuenta} error={err('titularCuenta')} />
+            <Campo nombre="clabe" etiqueta="CLABE interbancaria" valor={ajustes.clabe} error={err('clabe')} ayuda="18 dígitos" />
+            <Campo
+              nombre="plazoPagoMinutos"
+              etiqueta="Plazo para subir comprobante (minutos)"
+              tipo="number"
+              valor={String(ajustes.plazoPagoMinutos)}
+              error={err('plazoPagoMinutos')}
+              ayuda="120 = 2 horas. Nunca pasa del cierre del horario elegido"
             />
           </Seccion>
 

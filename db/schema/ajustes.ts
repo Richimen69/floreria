@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   doublePrecision,
   integer,
@@ -12,7 +13,7 @@ export const ajustesSitio = pgTable(
   "ajustes_sitio",
   {
     id: integer("id").primaryKey().default(1),
-
+    correoAvisos: text('correo_avisos'),
     // Identidad
     nombre: text("nombre").notNull().default("Florería"),
     eslogan: text("eslogan"),
@@ -26,6 +27,11 @@ export const ajustesSitio = pgTable(
     textoPortada: text("texto_portada"),
     imagenPortadaUrl: text("imagen_portada_url"),
     quienesSomos: text("quienes_somos"),
+    transferenciaActiva: boolean('transferencia_activa').notNull().default(false),
+    banco: text('banco'),
+    titularCuenta: text('titular_cuenta'),
+    clabe: text('clabe'),
+    plazoPagoMinutos: integer('plazo_pago_minutos').notNull().default(120),
 
     // Contacto
     whatsapp: text("whatsapp"),
@@ -44,7 +50,7 @@ export const ajustesSitio = pgTable(
     actualizadoEn: timestamp("actualizado_en", { withTimezone: true })
       .notNull()
       .defaultNow()
-      .$onUpdate(() => new Date()),
+      .$onUpdate(() => sql`now()`),
   },
   (t) => [check("ajustes_una_sola_fila", sql`${t.id} = 1`)],
 );

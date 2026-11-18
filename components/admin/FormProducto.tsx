@@ -313,10 +313,11 @@ export function FormProducto({
           />
           <Campo
             nombre="orden"
-            etiqueta="Orden dentro de su categoría"
+            etiqueta="Orden en Productos Top"
             tipo="number"
             valor={String(producto?.orden ?? 0)}
-            error={err("orden")}
+            error={err('orden')}
+            ayuda="Solo si está marcado como Top. Menor número aparece primero en Inicio"
           />
         </Seccion>
       </div>

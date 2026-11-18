@@ -9,7 +9,7 @@ type Props = {
 
 export function EncabezadoPagina({ titulo, descripcion, volver, acciones }: Props) {
   return (
-    <div className="sticky top-14 z-20 -mx-4 mb-6 flex flex-col gap-3 border-b border-borde bg-fondo/90 px-4 py-3 backdrop-blur sm:-mx-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:top-0 lg:-mx-8 lg:mb-8 lg:px-8 lg:py-4">
+    <div className="sticky top-14 z-20 -mx-4 mb-6 flex flex-col gap-3 border-b border-borde bg-fondo/90 px-4 py-3 backdrop-blur sm:-mx-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:top-0 lg:-mx-8 lg:mb-8 lg:px-8 lg:py-4 print:hidden">
       <div className="min-w-0">
         {volver && (
           <Link href={volver.href} className="text-sm text-texto-suave hover:text-primario">

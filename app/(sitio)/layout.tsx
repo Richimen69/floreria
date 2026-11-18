@@ -5,6 +5,8 @@ import { EnlacesNav, NavSitio } from "@/components/sitio/NavSitio";
 import { enlaceWhatsapp } from "@/lib/whatsapp";
 import { obtenerAjustes } from "@/server/consultas/ajustes";
 import { IconoCarrito } from "@/components/sitio/IconoCarrito";
+import { MenuCuenta } from '@/components/sitio/MenuCuenta'
+import { listarPaginasLegales } from '@/server/consultas/legales'
 
 export async function generateMetadata(): Promise<Metadata> {
   const a = await obtenerAjustes();
@@ -19,7 +21,8 @@ export default async function LayoutSitio({
 }: {
   children: React.ReactNode;
 }) {
-  const a = await obtenerAjustes();
+  const [a, legales] = await Promise.all([obtenerAjustes(), listarPaginasLegales()])
+  const legalesPublicadas = legales.filter((p) => p.publicada)
   const whatsapp = enlaceWhatsapp(
     a.whatsapp,
     `Hola, vengo de su página web y me gustaría hacer un pedido.`,
@@ -57,6 +60,7 @@ export default async function LayoutSitio({
             <Suspense fallback={<EnlacesNav pathname={null} />}>
               <NavSitio />
             </Suspense>
+            <MenuCuenta />
             <IconoCarrito />
           </div>
         </div>
@@ -100,6 +104,20 @@ export default async function LayoutSitio({
             </div>
           )}
         </div>
+        {legalesPublicadas.length > 0 && (
+          <div className="border-t border-borde">
+            <nav
+              aria-label="Información legal"
+              className="mx-auto flex max-w-6xl flex-wrap gap-x-6 gap-y-2 px-4 py-4 text-xs text-texto-suave sm:px-6"
+            >
+              {legalesPublicadas.map((p) => (
+                <Link key={p.slug} href={`/${p.slug}`} className="hover:text-primario hover:underline">
+                  {p.titulo}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        )}
       </footer>
 
       {whatsapp && (

@@ -1,0 +1,1 @@
+ALTER TABLE "ajustes_sitio" ADD COLUMN "correo_avisos" text;

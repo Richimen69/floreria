@@ -38,6 +38,7 @@ export async function obtenerConfigCalendario(): Promise<ConfigCalendario> {
     horizonteDias: ajustes?.horizonteDias ?? 60,
     semana: porDia,
     excepciones: excepciones.map((e) => ({
+      id: e.id,
       nombre: e.nombre,
       fechaInicio: e.fechaInicio,
       fechaFin: e.fechaFin,

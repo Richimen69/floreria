@@ -14,7 +14,7 @@ async function ZonaProtegida({ children }: { children: React.ReactNode }) {
         logoUrl={ajustes.logoUrl}
         usuario={{ name: sesion.user.name, email: sesion.user.email }}
       />
-      <main className="min-w-0 flex-1 px-4 pb-12 sm:px-6 lg:px-8">
+      <main className="min-w-0 flex-1 px-4 pb-12 sm:px-6 lg:px-8 print:p-0">
         {children}
       </main>
     </div>

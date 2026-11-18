@@ -45,7 +45,7 @@ export const productos = pgTable("productos", {
   actualizadoEn: timestamp("actualizado_en", { withTimezone: true })
     .notNull()
     .defaultNow()
-    .$onUpdate(() => new Date()),
+    .$onUpdate(() => sql`now()`),
 });
 
 // Un producto en varias categorías
@@ -58,10 +58,11 @@ export const productoCategorias = pgTable(
     categoriaId: integer("categoria_id")
       .notNull()
       .references(() => categorias.id, { onDelete: "restrict" }),
+    orden: integer('orden').notNull().default(0),
   },
   (t) => [
     primaryKey({ columns: [t.productoId, t.categoriaId] }),
-    index("producto_categorias_categoria_idx").on(t.categoriaId),
+    index('producto_categorias_categoria_idx').on(t.categoriaId, t.orden),
   ],
 );
 

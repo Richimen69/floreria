@@ -8,6 +8,8 @@ import { Etiqueta, claseInput } from '@/components/ui/Campo'
 import { DIAS } from '@/lib/validaciones/calendario'
 import type { BloqueConfig } from '@/lib/calendario'
 import type { EstadoFormulario } from '@/lib/validaciones/ajustes'
+import { AvisoPedidosAfectados } from '@/components/admin/AvisoPedidosAfectados'
+
 
 const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0] // de lunes a domingo
 const estadoInicial: EstadoFormulario = { ok: false, mensaje: '' }
@@ -50,6 +52,7 @@ export function FormHorarioSemanal({ semana, horizonteDias }: Props) {
       </header>
 
       <div className="space-y-6 p-6">
+        {estado.afectados && estado.afectados.length > 0 && <AvisoPedidosAfectados afectados={estado.afectados} />}
         <div className="max-w-xs space-y-1.5">
           <Etiqueta htmlFor="horizonteDias">Reservas con hasta (días)</Etiqueta>
           <input id="horizonteDias" name="horizonteDias" type="number" min={1} defaultValue={horizonteDias} className={claseInput} />

@@ -2,12 +2,15 @@
 
 import { z } from 'zod'
 import { calcularPrecio } from '@/lib/precios'
-import { sumarDias } from '@/lib/fechas'
+import { sumarDias, instanteAcapulco, restarMinutos } from '@/lib/fechas'
 import type { DiaEntrega, EstadoBloque } from '@/lib/calendario'
-import { ahoraEnAcapulco, diaDeEntrega, siguientesFechasDisponibles } from '@/server/calendario'
+import { ahoraEnAcapulco, diaDeEntrega, siguientesFechasDisponibles, ocupacionRango } from '@/server/calendario'
 import { obtenerConfigCalendario } from '@/server/consultas/calendario'
 import { complementosDe, obtenerProductosPorIds } from '@/server/consultas/catalogo'
 import { temporadaParaFecha } from '@/server/consultas/temporadas'
+import { evaluarFecha } from '@/lib/calendario'
+export type DiaCalendario = { fecha: string; disponible: boolean; motivo: string | null }
+
 
 const esquemaEntrada = z.object({
   items: z
@@ -17,8 +20,15 @@ const esquemaEntrada = z.object({
   bloque: z.string().max(20).nullable(),
 })
 
+const esquemaMes = z.object({
+  items: esquemaEntrada.shape.items,
+  mes: z.string().regex(/^\d{4}-\d{2}$/).nullable(),
+})
+
+
 export type LineaCarrito = {
   productoId: number
+  diasAnticipacion: number
   nombre: string | null
   slug: string | null
   imagen: string | null
@@ -34,6 +44,7 @@ export type Sugerencia = { id: number; nombre: string; slug: string; imagen: str
 
 export type Cotizacion = {
   lineas: LineaCarrito[]
+  productoAnticipacion: string | null
   total: number
   hoy: string
   fechaMinima: string
@@ -46,6 +57,9 @@ export type Cotizacion = {
   proximas: DiaEntrega[]
   sugerencias: Sugerencia[]
   listo: boolean
+  ahoraServidor: string
+  cierreBloque: string | null
+  productosListos: boolean
 }
 
 export async function cotizarCarrito(entrada: unknown): Promise<Cotizacion> {
@@ -61,6 +75,8 @@ export async function cotizarCarrito(entrada: unknown): Promise<Cotizacion> {
 
   // La anticipación del carrito la marca el producto que pida más días
   const diasAnticipacion = Math.max(0, ...productos.map((p) => p.diasAnticipacion))
+  const productoAnticipacion =
+    diasAnticipacion > 0 ? (productos.find((p) => p.diasAnticipacion === diasAnticipacion)?.nombre ?? null) : null
   const fechaMinima = sumarDias(ahora.fecha, diasAnticipacion)
   const fechaMaxima = sumarDias(ahora.fecha, config.horizonteDias)
 
@@ -78,7 +94,7 @@ export async function cotizarCarrito(entrada: unknown): Promise<Cotizacion> {
     if (!p) {
       return {
         productoId: item.productoId, nombre: null, slug: null, imagen: null, cantidad: item.cantidad,
-        precioUnitario: 0, subtotal: 0, enOferta: false, deTemporada: false,
+        precioUnitario: 0, subtotal: 0, enOferta: false, deTemporada: false, diasAnticipacion: 0,
         problema: 'Este producto ya no está disponible',
       }
     }
@@ -92,7 +108,8 @@ export async function cotizarCarrito(entrada: unknown): Promise<Cotizacion> {
 
     return {
       productoId: p.id, nombre: p.nombre, slug: p.slug, imagen: p.imagenes[0] ?? null, cantidad: item.cantidad,
-      precioUnitario: precioCentavos, subtotal: precioCentavos * item.cantidad, enOferta, deTemporada, problema,
+      precioUnitario: precioCentavos, subtotal: precioCentavos * item.cantidad, enOferta, deTemporada,
+      diasAnticipacion: p.diasAnticipacion, problema,
     }
   })
 
@@ -114,10 +131,14 @@ export async function cotizarCarrito(entrada: unknown): Promise<Cotizacion> {
       imagen: c.imagenes[0] ?? null,
       precio: calcularPrecio(c, fechaPrecios, ahora.fecha, temporada).precioCentavos,
     }))
-
+  const cierreBloque =
+    bloqueElegido && datos.fecha === ahora.fecha
+      ? instanteAcapulco(datos.fecha, restarMinutos(bloqueElegido.inicio, bloqueElegido.minutosCierre))
+      : null
   return {
     lineas,
     total,
+    productoAnticipacion,
     hoy: ahora.fecha,
     fechaMinima,
     fechaMaxima,
@@ -129,5 +150,35 @@ export async function cotizarCarrito(entrada: unknown): Promise<Cotizacion> {
     proximas,
     sugerencias,
     listo: lineas.length > 0 && lineas.every((l) => !l.problema) && Boolean(dia?.disponible) && Boolean(bloqueElegido),
+    ahoraServidor: new Date().toISOString(),
+    cierreBloque,
+    productosListos: lineas.length > 0 && lineas.every((l) => !l.problema),
   }
+}
+
+export async function calendarioMes(entrada: unknown) {
+  const { items, mes } = esquemaMes.parse(entrada)
+  const ids = [...new Set(items.map((i) => i.productoId))].sort((a, b) => a - b)
+  const [ahora, config, productos] = await Promise.all([
+    ahoraEnAcapulco(),
+    obtenerConfigCalendario(),
+    obtenerProductosPorIds(ids),
+  ])
+
+  const diasAnticipacion = Math.max(0, ...productos.map((p) => p.diasAnticipacion))
+  const fechaMinima = sumarDias(ahora.fecha, diasAnticipacion)
+  const fechaMaxima = sumarDias(ahora.fecha, config.horizonteDias)
+  const mesFinal = mes ?? fechaMinima.slice(0, 7)
+
+  const [anio, numMes] = mesFinal.split('-').map(Number)
+  const diasEnMes = new Date(Date.UTC(anio, numMes, 0)).getUTCDate()
+  const ocupacion = await ocupacionRango(`${mesFinal}-01`, `${mesFinal}-${String(diasEnMes).padStart(2, '0')}`)
+
+  const dias: DiaCalendario[] = Array.from({ length: diasEnMes }, (_, i) => {
+    const fecha = `${mesFinal}-${String(i + 1).padStart(2, '0')}`
+    const d = evaluarFecha(config, fecha, ahora, ocupacion[fecha] ?? {}, fechaMinima)
+    return { fecha, disponible: d.disponible, motivo: d.motivo }
+  })
+
+  return { mes: mesFinal, dias, fechaMinima, fechaMaxima, hoy: ahora.fecha }
 }

@@ -1,4 +1,6 @@
 const ZONA = 'America/Mexico_City' // hora de Acapulco
+const DESFASE_ACAPULCO = '-06:00'
+
 
 // Fecha de hoy en Acapulco como 'AAAA-MM-DD', sin importar la zona del servidor
 export function hoyEnAcapulco(ahora = new Date()) {
@@ -10,6 +12,10 @@ const formatoCorto = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: '
 // '2027-04-30' → '30 abr'
 export function fechaCorta(fecha: string) {
   return formatoCorto.format(new Date(`${fecha}T00:00:00Z`))
+}
+
+export function instanteAcapulco(fecha: string, hora: string) {
+  return new Date(`${fecha}T${hora}:00${DESFASE_ACAPULCO}`).toISOString()
 }
 // Hora actual en Acapulco como 'HH:MM' (24 h)
 export function horaEnAcapulco(ahora = new Date()) {

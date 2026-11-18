@@ -1,4 +1,5 @@
 import { boolean, integer, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 
 export const categorias = pgTable('categorias', {
   id: serial('id').primaryKey(),
@@ -12,7 +13,7 @@ export const categorias = pgTable('categorias', {
   actualizadoEn: timestamp('actualizado_en', { withTimezone: true })
     .notNull()
     .defaultNow()
-    .$onUpdate(() => new Date()),
+    .$onUpdate(() => sql`now()`),
 })
 
 export type Categoria = typeof categorias.$inferSelect

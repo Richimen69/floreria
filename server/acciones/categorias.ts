@@ -44,6 +44,7 @@ export async function guardarCategoria(
 
   const datos = resultado.data;
 
+
   if (await slugOcupado(datos.slug, id ?? undefined)) {
     return {
       ok: false,
@@ -53,9 +54,12 @@ export async function guardarCategoria(
   }
 
   if (id) {
-    await db.update(categorias).set(datos).where(eq(categorias.id, id));
+    await db.update(categorias).set(datos).where(eq(categorias.id, id))
   } else {
-    await db.insert(categorias).values(datos);
+    const [{ ultimo }] = await db
+      .select({ ultimo: sql<number>`coalesce(max(${categorias.orden}), -1)` })
+      .from(categorias)
+    await db.insert(categorias).values({ ...datos, orden: ultimo + 1 })
   }
 
   updateTag("categorias");
@@ -93,4 +97,23 @@ export async function eliminarCategoria(id: number) {
   updateTag("categorias");
   updateTag("productos");
   redirect("/admin/categorias");
+}
+
+export async function reordenarCategorias(ids: number[]) {
+  await requireAdmin()
+
+  const resultado = z.array(z.number().int().positive()).max(500).safeParse(ids)
+  if (!resultado.success || new Set(resultado.data).size !== resultado.data.length) {
+    return { ok: false }
+  }
+
+  // La posición en la lista se convierte en el número de orden
+  await db.transaction(async (tx) => {
+    for (const [posicion, id] of resultado.data.entries()) {
+      await tx.update(categorias).set({ orden: posicion }).where(eq(categorias.id, id))
+    }
+  })
+
+  updateTag('categorias')
+  return { ok: true }
 }

@@ -64,6 +64,90 @@
       "when": 1794199292904,
       "tag": "0008_calendario",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794947037061,
+      "tag": "0009_orden-por-categoria",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794949391420,
+      "tag": "0010_inventario",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794952666878,
+      "tag": "0011_zonas-envio",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794955842145,
+      "tag": "0012_pedidos",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794956536520,
+      "tag": "0013_cuentas-y-lugar",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794957190012,
+      "tag": "0014_tarjeta-dedicatoria",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794960320820,
+      "tag": "0015_folio-y-estados",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794963887793,
+      "tag": "0016_pago-transferencia",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794969397698,
+      "tag": "0017_pago-transferencia",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795021107777,
+      "tag": "0018_correo-avisos",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795024464472,
+      "tag": "0019_paginas-legales",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1795025128490,
+      "tag": "0020_aceptacion-legales",
+      "breakpoints": true
     }
   ]
 }

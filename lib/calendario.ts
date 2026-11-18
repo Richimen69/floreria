@@ -6,6 +6,7 @@ export type ConfigCalendario = {
   horizonteDias: number
   semana: Record<number, BloqueConfig[]>
   excepciones: {
+    id: number
     nombre: string
     fechaInicio: string
     fechaFin: string
@@ -123,4 +124,38 @@ export function proximasFechasDisponibles(
     fecha = sumarDias(fecha, 1)
   }
   return resultado
+}
+
+export type PedidoAfectado = {
+  fecha: string
+  bloque: string
+  total: number
+  pedidos: { id: number; folio: string }[]
+  motivo: string
+}
+
+/**
+ * ¿Un bloque con pedidos seguiría existiendo con esta configuración?
+ * Solo revisa la estructura (días, horarios y cupos); no la hora actual ni el horizonte.
+ */
+export function revisarBloqueEnConfig(
+  config: ConfigCalendario,
+  fecha: string,
+  inicio: string,
+  fin: string,
+  total: number,
+): string | null {
+  const excepcion = config.excepciones.find((e) => e.fechaInicio <= fecha && fecha <= e.fechaFin)
+
+  if (excepcion?.tipo === 'cerrado') return 'El día quedaría cerrado'
+  if (excepcion?.tipo === 'no_disponible') return 'El día quedaría como “reservas no disponibles”'
+
+  const bloques = excepcion?.tipo === 'especial' ? excepcion.bloques : (config.semana[diaSemana(fecha)] ?? [])
+  if (bloques.length === 0) return 'Ese día ya no tendría entregas'
+
+  const bloque = bloques.find((b) => b.inicio === inicio && b.fin === fin)
+  if (!bloque) return `El horario ${inicio}–${fin} ya no existiría ese día`
+  if (bloque.capacidad < total) return `El cupo bajaría a ${bloque.capacidad} y ya hay ${total} pedido(s)`
+
+  return null
 }

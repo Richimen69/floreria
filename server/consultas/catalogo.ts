@@ -115,24 +115,18 @@ export async function obtenerCatalogo() {
       .orderBy(asc(productos.orden), asc(productos.nombre)),
     db.select().from(productoCategorias),
   ]);
-
-  const productosListos = listaProductos.map((p) =>
-    conDisponibilidad(p, hoy, temporada),
-  );
+  const porId = new Map(listaProductos.map((p) => [p.id, conDisponibilidad(p, hoy, temporada)]))
 
   return listaCategorias
-    .map((categoria) => {
-      const ids = new Set(
-        enlaces
-          .filter((e) => e.categoriaId === categoria.id)
-          .map((e) => e.productoId),
-      );
-      return {
-        ...categoria,
-        productos: productosListos.filter((p) => ids.has(p.id)),
-      };
-    })
-    .filter((categoria) => categoria.productos.length > 0);
+    .map((categoria) => ({
+      ...categoria,
+      productos: enlaces
+        .filter((e) => e.categoriaId === categoria.id)
+        .sort((a, b) => a.orden - b.orden)
+        .map((e) => porId.get(e.productoId))
+        .filter((p): p is NonNullable<typeof p> => p !== undefined),
+    }))
+    .filter((categoria) => categoria.productos.length > 0)
 }
 
 export async function obtenerProductoPorSlug(slug: string) {

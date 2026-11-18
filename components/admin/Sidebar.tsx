@@ -16,6 +16,11 @@ const iconos = {
   salir: 'M15 4h4a1 1 0 011 1v14a1 1 0 01-1 1h-4M10 17l5-5-5-5M15 12H4',
   menu: 'M4 6h16M4 12h16M4 18h16',
   cerrar: 'M6 6l12 12M18 6L6 18',
+  inventario: 'M4 7l8-4 8 4-8 4-8-4zM4 7v10l8 4 8-4V7M12 11v10',
+  envios: 'M3 7h11v9H3zM14 10h4l3 3v3h-7M7 19a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z',
+  pedidos: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6M9 16h4',
+  legales: 'M9 12h6M9 16h6M7 3h7l5 5v12a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1zM14 3v5h5',
+
 }
 
 function Icono({ d, clase = 'h-[18px] w-[18px]' }: { d: string; clase?: string }) {
@@ -33,6 +38,10 @@ const enlaces = [
   { href: '/admin/temporadas', texto: 'Temporadas', icono: iconos.temporadas },
   { href: '/admin/calendario', texto: 'Calendario', icono: iconos.calendario },
   { href: '/admin/ajustes', texto: 'Ajustes del sitio', icono: iconos.ajustes },
+  { href: '/admin/inventario', texto: 'Inventario', icono: iconos.inventario },
+  { href: '/admin/envios', texto: 'Zonas de envío', icono: iconos.envios },
+  { href: '/admin/pedidos', texto: 'Pedidos', icono: iconos.pedidos },
+  { href: '/admin/legales', texto: 'Textos legales', icono: iconos.legales },
 ]
 
 type Props = {
@@ -86,7 +95,7 @@ export function Sidebar({ nombre, logoUrl, usuario }: Props) {
   return (
     <>
       {/* Barra superior, solo en celular y tableta */}
-      <div className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-borde bg-superficie px-4 lg:hidden">
+      <div className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-borde bg-superficie px-4 lg:hidden print:hidden">
         <Marca nombre={nombre} logoUrl={logoUrl} />
         <button
           type="button"
@@ -107,9 +116,8 @@ export function Sidebar({ nombre, logoUrl, usuario }: Props) {
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r border-borde bg-superficie transition-transform duration-200 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:w-64 lg:translate-x-0 ${
-          abierto ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r border-borde bg-superficie transition-transform duration-200 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:w-64 lg:translate-x-0 print:hidden ${abierto ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         <div className="flex items-center justify-between gap-2 px-5 py-5">
           <Marca nombre={nombre} logoUrl={logoUrl} />
@@ -127,9 +135,8 @@ export function Sidebar({ nombre, logoUrl, usuario }: Props) {
                 key={e.href}
                 href={e.href}
                 onClick={() => setAbierto(false)}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
-                  activo ? 'bg-primario-suave font-semibold text-primario-oscuro' : 'text-texto-suave hover:bg-fondo hover:text-texto'
-                }`}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${activo ? 'bg-primario-suave font-semibold text-primario-oscuro' : 'text-texto-suave hover:bg-fondo hover:text-texto'
+                  }`}
               >
                 <Icono d={e.icono} />
                 {e.texto}

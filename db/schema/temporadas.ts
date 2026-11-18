@@ -17,7 +17,7 @@ export const temporadas = pgTable(
     actualizadoEn: timestamp('actualizado_en', { withTimezone: true })
       .notNull()
       .defaultNow()
-      .$onUpdate(() => new Date()),
+      .$onUpdate(() => sql`now()`),
   },
   (t) => [check('temporada_fechas_validas', sql`${t.fechaFin} >= ${t.fechaInicio}`)],
 )

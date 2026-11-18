@@ -8,6 +8,8 @@ import { Campo, Seccion } from '@/components/admin/Formulario'
 import { Boton } from '@/components/ui/Boton'
 import type { EstadoFormulario } from '@/lib/validaciones/ajustes'
 import type { ExcepcionAdmin } from '@/server/consultas/calendario'
+import { AvisoPedidosAfectados } from '@/components/admin/AvisoPedidosAfectados'
+
 
 const estadoInicial: EstadoFormulario = { ok: false, mensaje: '' }
 
@@ -37,12 +39,26 @@ export function FormExcepcion({ excepcion }: { excepcion?: ExcepcionAdmin }) {
 
   async function eliminar() {
     if (!excepcion || !confirm(`¿Eliminar "${excepcion.nombre}"? Esas fechas volverán al horario habitual.`)) return
-    await eliminarExcepcion(excepcion.id)
+
+    const r = await eliminarExcepcion(excepcion.id)
+    if (r?.afectados?.length) {
+      const lista = r.afectados
+        .map((a) => `• ${a.fecha} ${a.bloque}: ${a.pedidos.map((p) => p.folio).join(', ')} (${a.motivo})`)
+        .join('\n')
+      if (confirm(`Estos pedidos quedarían fuera del horario:\n\n${lista}\n\nLos pedidos no se modifican. ¿Eliminar de todos modos?`)) {
+        await eliminarExcepcion(excepcion.id, true)
+      }
+    }
   }
 
   return (
     <form onSubmit={enviar}>
       <div className="sticky top-0 z-10 -mx-8 mb-8 flex items-center justify-between gap-4 border-b border-borde bg-fondo/85 px-8 py-4 backdrop-blur">
+        {estado.afectados && estado.afectados.length > 0 && (
+          <div className="mb-6 max-w-4xl">
+            <AvisoPedidosAfectados afectados={estado.afectados} />
+          </div>
+        )}
         <div>
           <Link href="/admin/calendario" className="text-sm text-texto-suave hover:text-primario">← Calendario</Link>
           <h1 className="font-titulos text-2xl font-semibold text-texto">{excepcion ? excepcion.nombre : 'Nueva excepción'}</h1>

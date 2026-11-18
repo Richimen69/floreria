@@ -1,6 +1,6 @@
 'use server'
 
-import { and, eq, ne } from 'drizzle-orm'
+import { and, eq, ne, sql } from 'drizzle-orm'
 import { updateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
@@ -52,8 +52,28 @@ export async function guardarProducto(
       productoId = nuevo.id
     }
 
+    const existentes = await tx
+      .select({ categoriaId: productoCategorias.categoriaId, orden: productoCategorias.orden })
+      .from(productoCategorias)
+      .where(eq(productoCategorias.productoId, productoId))
+    const ordenPrevio = new Map(existentes.map((e) => [e.categoriaId, e.orden]))
+
     await tx.delete(productoCategorias).where(eq(productoCategorias.productoId, productoId))
-    await tx.insert(productoCategorias).values(categoriaIds.map((categoriaId) => ({ productoId, categoriaId })))
+
+    const filas = []
+    for (const categoriaId of categoriaIds) {
+      let orden = ordenPrevio.get(categoriaId)
+      if (orden === undefined) {
+        // Categoría nueva para este producto: va al final
+        const [{ ultimo }] = await tx
+          .select({ ultimo: sql<number>`coalesce(max(${productoCategorias.orden}), -1)` })
+          .from(productoCategorias)
+          .where(eq(productoCategorias.categoriaId, categoriaId))
+        orden = ultimo + 1
+      }
+      filas.push({ productoId, categoriaId, orden })
+    }
+    await tx.insert(productoCategorias).values(filas)
 
     await tx.delete(productoComplementos).where(eq(productoComplementos.productoId, productoId))
     const complementos = complementoIds.filter((c) => c !== productoId)
@@ -73,4 +93,34 @@ export async function eliminarProducto(id: number) {
   await db.delete(productos).where(eq(productos.id, id))
   updateTag('productos')
   redirect('/admin/productos')
+}
+
+export async function reordenarProductosEnCategoria(categoriaId: number, ids: number[]) {
+  await requireAdmin()
+
+  const resultado = z.array(z.number().int().positive()).max(1000).safeParse(ids)
+  if (!resultado.success || !Number.isInteger(categoriaId)) return { ok: false, mensaje: 'Datos no válidos' }
+
+  const actuales = await db
+    .select({ productoId: productoCategorias.productoId })
+    .from(productoCategorias)
+    .where(eq(productoCategorias.categoriaId, categoriaId))
+
+  // Solo se acepta la lista completa de la categoría, para no desordenar nada
+  const esperados = new Set(actuales.map((a) => a.productoId))
+  if (esperados.size !== resultado.data.length || !resultado.data.every((id) => esperados.has(id))) {
+    return { ok: false, mensaje: 'La lista cambió mientras la ordenabas. Recarga la página.' }
+  }
+
+  await db.transaction(async (tx) => {
+    for (const [posicion, productoId] of resultado.data.entries()) {
+      await tx
+        .update(productoCategorias)
+        .set({ orden: posicion })
+        .where(and(eq(productoCategorias.productoId, productoId), eq(productoCategorias.categoriaId, categoriaId)))
+    }
+  })
+
+  updateTag('productos')
+  return { ok: true, mensaje: 'Orden guardado' }
 }

@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { boolean, pgTable, text, timestamp, integer } from 'drizzle-orm/pg-core'
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -9,6 +9,9 @@ export const user = pgTable('user', {
   role: text('role').notNull().default('cliente'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  telefono: text('telefono'),
+  privacidadVersionAceptada: integer('privacidad_version_aceptada'),
+  legalesAceptadosEn: timestamp('legales_aceptados_en', { withTimezone: true }),
 })
 
 export const session = pgTable('session', {

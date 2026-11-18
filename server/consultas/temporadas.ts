@@ -17,7 +17,7 @@ export async function listarTemporadas() {
       fechaFin: temporadas.fechaFin,
       ajustePorcentaje: temporadas.ajustePorcentaje,
       reservasAbiertas: temporadas.reservasAbiertas,
-      totalPrecios: sql<number>`(SELECT count(*)::int FROM precios_temporada pt WHERE pt.temporada_id = ${temporadas.id})`,
+      totalPrecios: sql<number>`(SELECT count(*)::int FROM precios_temporada pt WHERE pt.temporada_id = temporadas.id)`,
     })
     .from(temporadas)
     .orderBy(desc(temporadas.fechaInicio))

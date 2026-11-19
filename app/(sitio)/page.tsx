@@ -49,7 +49,7 @@ export default async function InicioPage() {
                 {a.eslogan}
               </p>
             )}
-            <h1 className="font-titulos text-4xl leading-tight font-semibold sm:text-6xl">
+            <h1 className="font-titulos text-4xl leading-tight font-semibold sm:text-4xl">
               {a.tituloPortada ?? a.nombre}
             </h1>
             {a.textoPortada && (
@@ -66,16 +66,6 @@ export default async function InicioPage() {
               >
                 Ver catálogo
               </Link>
-              {whatsapp && (
-                <a
-                  href={whatsapp}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-full bg-acento px-6 py-3 text-sm font-semibold text-sobre-acento hover:opacity-90"
-                >
-                  Más información
-                </a>
-              )}
             </div>
           </div>
         </div>

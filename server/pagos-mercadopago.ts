@@ -11,7 +11,18 @@ const MARGEN_MS = 5 * 60_000 // tolerancia por diferencias de reloj
 
 export async function procesarPagoMercadoPago(pagoId: string): Promise<{ pedidoId: number; resultado: ResultadoPago } | null> {
   // Siempre se consulta a Mercado Pago: el aviso solo dice "revisa este pago"
-  const pago = await obtenerPago(pagoId)
+  let pago
+  try {
+    pago = await obtenerPago(pagoId)
+  } catch (error) {
+    // Pago inexistente (por ejemplo, la simulación del panel de Mercado Pago): no hay nada que hacer
+    const status = (error as { status?: number; cause?: { status?: number } })?.status ?? (error as { cause?: { status?: number } })?.cause?.status
+    if (status === 404) {
+      console.warn(`Mercado Pago: el pago ${pagoId} no existe; se ignora el aviso`)
+      return null
+    }
+    throw error // otros errores (red, Mercado Pago caído): que reintente
+  }
 
   const pedidoId = Number(pago.external_reference)
   if (!Number.isInteger(pedidoId) || pedidoId <= 0) return null

@@ -11,6 +11,7 @@ import {
   pedidoRecibido,
   pedidoEnCamino,
   pedidoEntregado,
+  pedidoRecibidoMercadoPago,
   type Marca,
   type PedidoCorreo,
 } from '@/lib/correos/plantillas'
@@ -52,12 +53,16 @@ export async function notificarPedidoCreado(id: number) {
     ? new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Mexico_City' }).format(p.pagoVenceEn)
     : ''
 
-  if (p.compradorEmail && a.clabe) {
-    await enviarCorreo({
-      para: p.compradorEmail,
-      responderA: a.email,
-      ...pedidoRecibido(marca, pedido, { banco: a.banco ?? '', titular: a.titularCuenta ?? '', clabe: a.clabe, horaLimite }),
-    })
+  if (p.compradorEmail) {
+    if (p.metodoPago === 'mercadopago') {
+      await enviarCorreo({ para: p.compradorEmail, responderA: a.email, ...pedidoRecibidoMercadoPago(marca, pedido, horaLimite) })
+    } else if (a.clabe) {
+      await enviarCorreo({
+        para: p.compradorEmail,
+        responderA: a.email,
+        ...pedidoRecibido(marca, pedido, { banco: a.banco ?? '', titular: a.titularCuenta ?? '', clabe: a.clabe, horaLimite }),
+      })
+    }
   }
   if (a.correoAvisos) {
     await enviarCorreo({ para: a.correoAvisos, ...avisoFloreria(marca, 'Nuevo pedido', pedido, `${ADMIN}/pedidos/${id}`) })
@@ -107,4 +112,10 @@ export async function notificarAvanceTrabajo(id: number, estado: 'en_camino' | '
 
   const correo = estado === 'en_camino' ? pedidoEnCamino(d.marca, d.pedido) : pedidoEntregado(d.marca, d.pedido)
   await enviarCorreo({ para: d.p.compradorEmail, responderA: d.a.email, ...correo })
+}
+
+export async function avisarFloreria(id: number, titulo: string) {
+  const d = await cargar(id)
+  if (!d?.a.correoAvisos) return
+  await enviarCorreo({ para: d.a.correoAvisos, ...avisoFloreria(d.marca, titulo, d.pedido, `${ADMIN}/pedidos/${id}`) })
 }

@@ -20,7 +20,7 @@ export async function cambiarEstado(id: number, tipo: 'pago' | 'trabajo', destin
 
   const resultado = await db.transaction(async (tx): Promise<Resultado> => {
     const [p] = await tx
-      .select({ estadoPago: pedidos.estadoPago, estadoTrabajo: pedidos.estadoTrabajo })
+      .select({ estadoPago: pedidos.estadoPago, estadoTrabajo: pedidos.estadoTrabajo, metodoPago: pedidos.metodoPago })
       .from(pedidos)
       .where(eq(pedidos.id, id))
       .for('update')
@@ -124,5 +124,32 @@ export async function rechazarPago(id: number, motivo: string): Promise<Resultad
     updateTag('productos')
     after(() => notificarCancelacion(id, 'rechazado', nota)) // ← NUEVO
   }
+  return resultado
+}
+
+export async function resolverPagoMercadoPago(id: number, nota: string): Promise<Resultado> {
+  const sesion = await requireAdmin()
+  const texto = String(nota ?? '').trim().slice(0, 300)
+  if (!Number.isInteger(id)) return { ok: false, mensaje: 'Pedido no válido' }
+  if (texto.length < 3) return { ok: false, mensaje: 'Escribe qué se hizo (por ejemplo: “Reembolsado desde Mercado Pago”)' }
+
+  const resultado = await db.transaction(async (tx): Promise<Resultado> => {
+    const [p] = await tx.select({ pagoTardio: pedidos.pagoTardio, estadoPago: pedidos.estadoPago }).from(pedidos).where(eq(pedidos.id, id)).for('update')
+    if (!p) return { ok: false, mensaje: 'El pedido no existe' }
+    if (!p.pagoTardio) return { ok: false, mensaje: 'Este pedido no tiene pagos pendientes de revisar' }
+
+    await tx.update(pedidos).set({ pagoTardio: false }).where(eq(pedidos.id, id))
+    await tx.insert(pedidoEventos).values({
+      pedidoId: id,
+      tipo: 'pago',
+      de: p.estadoPago,
+      a: p.estadoPago,
+      nota: `Revisión de pago resuelta: ${texto}`,
+      usuarioId: sesion.user.id,
+    })
+    return { ok: true, mensaje: 'Marcado como resuelto' }
+  })
+
+  if (resultado.ok) updateTag('pedidos')
   return resultado
 }

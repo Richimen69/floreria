@@ -6,7 +6,7 @@ import { ESTADOS_PAGO, ESTADOS_TRABAJO } from '@/lib/pedidos'
 import { formatearPrecio } from '@/lib/utils'
 import { ahoraEnAcapulco, proximosDias } from '@/server/calendario'
 import { listarPedidosAdmin } from '@/server/consultas/pedidos-admin'
-import { alertasCatalogo, indicadoresPedidos } from '@/server/consultas/resumen'
+import { alertasCatalogo, indicadoresPedidos, pagosMercadoPagoPorRevisar } from '@/server/consultas/resumen'
 import { vencerPedidosExpirados } from '@/server/vencimientos'
 
 function Indicador({ titulo, valor, detalle, href, tono = 'normal' }: {
@@ -39,19 +39,23 @@ function Seccion({ titulo, accion, children }: { titulo: string; accion?: React.
   )
 }
 
+const claseAlerta = 'rounded-full bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100'
+
 async function Contenido() {
   const ahora = await ahoraEnAcapulco()
   await vencerPedidosExpirados()
 
-  const [indicadores, alertas, dias, porAtender] = await Promise.all([
+  const [indicadores, alertas, dias, porAtender, pagosRevisar] = await Promise.all([
     indicadoresPedidos(ahora.fecha),
     alertasCatalogo(),
     proximosDias(2),
     listarPedidosAdmin({ filtro: 'por-atender', q: '' }),
+    pagosMercadoPagoPorRevisar(),
   ])
   const entregasHoy = porAtender.filter((p) => p.fechaEntrega === ahora.fecha)
 
-  const hayAlertas = alertas.agotados + alertas.sinExistencias + alertas.insumosBajos + indicadores.reembolsos > 0
+  const hayAlertas =
+    alertas.agotados + alertas.sinExistencias + alertas.insumosBajos + indicadores.reembolsos + indicadores.porRevisar + pagosRevisar.length > 0
 
   return (
     <div className="space-y-6">
@@ -76,23 +80,38 @@ async function Contenido() {
       {/* Alertas */}
       {hayAlertas && (
         <div className="flex flex-wrap gap-2">
+          {/* Pagos de Mercado Pago que necesitan revisión: uno por pedido */}
+          {pagosRevisar.map((p) => (
+            <Link
+              key={p.id}
+              href={`/admin/pedidos/${p.id}`}
+              className="rounded-full bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-800 hover:bg-red-100"
+            >
+              Pago de Mercado Pago por revisar · {p.folio}
+            </Link>
+          ))}
+          {indicadores.porRevisar > 0 && (
+            <Link href="/admin/pedidos?filtro=pendiente-pago" className="rounded-full bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-900 hover:bg-blue-100">
+              {indicadores.porRevisar} comprobante(s) por revisar
+            </Link>
+          )}
           {indicadores.reembolsos > 0 && (
-            <Link href="/admin/pedidos?vista=anteriores&filtro=todos" className="rounded-full bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100">
+            <Link href="/admin/pedidos?filtro=historial" className={claseAlerta}>
               {indicadores.reembolsos} pedido(s) pendientes de reembolso
             </Link>
           )}
           {alertas.agotados > 0 && (
-            <Link href="/admin/productos?estado=agotados" className="rounded-full bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100">
+            <Link href="/admin/productos?estado=agotados" className={claseAlerta}>
               {alertas.agotados} producto(s) agotados hoy
             </Link>
           )}
           {alertas.sinExistencias > 0 && (
-            <Link href="/admin/productos?estado=sin-existencias" className="rounded-full bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100">
+            <Link href="/admin/productos?estado=sin-existencias" className={claseAlerta}>
               {alertas.sinExistencias} producto(s) sin existencias
             </Link>
           )}
           {alertas.insumosBajos > 0 && (
-            <Link href="/admin/inventario?filtro=bajo-minimo" className="rounded-full bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100">
+            <Link href="/admin/inventario?filtro=bajo-minimo" className={claseAlerta}>
               {alertas.insumosBajos} insumo(s) bajo mínimo
             </Link>
           )}

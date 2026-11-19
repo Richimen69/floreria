@@ -32,6 +32,7 @@ export const ajustesSitio = pgTable(
     titularCuenta: text('titular_cuenta'),
     clabe: text('clabe'),
     plazoPagoMinutos: integer('plazo_pago_minutos').notNull().default(120),
+    mercadoPagoActivo: boolean('mercado_pago_activo').notNull().default(false),
 
     // Contacto
     whatsapp: text("whatsapp"),

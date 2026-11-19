@@ -162,6 +162,13 @@
       "when": 1795044954465,
       "tag": "0022_video-producto",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795106032362,
+      "tag": "0023_mercado-pago",
+      "breakpoints": true
     }
   ]
 }

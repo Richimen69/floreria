@@ -16,9 +16,10 @@ import { ErrorExistencias, descontarExistencias } from '@/server/existencias'
 import { notificarPedidoCreado } from '@/server/notificaciones' // ← NUEVO
 import { vencerPedidosExpirados } from '@/server/vencimientos'
 import { legalesPublicadas } from '@/server/consultas/legales'
+import { crearPreferencia, mercadoPagoDisponible } from '@/lib/mercadopago'
 
 export type ResultadoPedido =
-  | { ok: true; token: string }
+  | { ok: true; token: string; urlPago?: string }
   | { ok: false; mensaje: string; errores?: Record<string, string[] | undefined>; volverAlCarrito?: boolean; requiereCuenta?: boolean }
 
 class ErrorCupoLleno extends Error { }
@@ -28,13 +29,18 @@ export async function crearPedido(formData: FormData): Promise<ResultadoPedido> 
   if (!sesion) return { ok: false, mensaje: 'Inicia sesión para hacer tu pedido.', requiereCuenta: true }
 
   const ajustes = await obtenerAjustes()
-  if (!ajustes.transferenciaActiva) {
-    return { ok: false, mensaje: 'Por el momento no estamos recibiendo pedidos en línea. Escríbenos por WhatsApp.' }
-  }
 
   const validacion = validarCheckout(Object.fromEntries(formData))
   if (!validacion.ok) return { ok: false, mensaje: 'Revisa los campos marcados', errores: validacion.errores }
   const datos = validacion.datos
+
+  const metodoActivo =
+    datos.metodoPago === 'mercadopago'
+      ? ajustes.mercadoPagoActivo && mercadoPagoDisponible()
+      : ajustes.transferenciaActiva
+  if (!metodoActivo) {
+    return { ok: false, mensaje: 'Ese método de pago no está disponible. Elige otro.', errores: { metodoPago: ['No disponible'] } }
+  }
 
   const legales = await legalesPublicadas()
   if (legales.length > 0 && !datos.aceptaLegales) {
@@ -79,8 +85,7 @@ export async function crearPedido(formData: FormData): Promise<ResultadoPedido> 
   const pagoVenceEn = new Date(Math.min(Date.now() + ajustes.plazoPagoMinutos * 60_000, cierreBloque))
 
   try {
-    // ← NUEVO: ahora también sale el "id"
-    const { id, token, descontoExistencias } = await db.transaction(async (tx) => {
+    const { id, token, folio, descontoExistencias } = await db.transaction(async (tx) => {
       await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`${fecha}|${bloque.clave}`}))`)
 
       const [{ ocupados }] = await tx
@@ -128,14 +133,14 @@ export async function crearPedido(formData: FormData): Promise<ResultadoPedido> 
           subtotalCentavos: subtotal,
           envioCentavos: envio,
           totalCentavos: subtotal + envio,
-          metodoPago: 'transferencia',
+          metodoPago: datos.metodoPago,
           pagoVenceEn,
           versionPrivacidad: version('aviso-de-privacidad'),
           versionTerminos: version('terminos'),
           versionCancelaciones: version('cancelaciones'),
           legalesAceptadosEn: legales.length > 0 ? new Date() : null,
         })
-        .returning({ id: pedidos.id, token: pedidos.token })
+        .returning({ id: pedidos.id, token: pedidos.token, folio: pedidos.folio })
 
       await tx.insert(pedidoItems).values(
         cotizacion.lineas.map((l) => ({
@@ -154,12 +159,34 @@ export async function crearPedido(formData: FormData): Promise<ResultadoPedido> 
       await tx.insert(pedidoEventos).values({ pedidoId: pedido.id, tipo: 'creado', a: 'nuevo', usuarioId: sesion.user.id })
       await tx.update(user).set({ telefono: datos.compradorTelefono }).where(eq(user.id, sesion.user.id))
 
-      return { id: pedido.id, token: pedido.token, descontoExistencias } // ← NUEVO: se agrega id
+      return { id: pedido.id, token: pedido.token, folio: pedido.folio, descontoExistencias }
+
     })
 
     updateTag('pedidos')
     if (descontoExistencias) updateTag('productos')
-    after(() => notificarPedidoCreado(id)) // ← NUEVO: correo al cliente y a la florería
+    after(() => notificarPedidoCreado(id))
+
+    // Con Mercado Pago, se crea el enlace de pago y el cliente va directo a pagar
+    if (datos.metodoPago === 'mercadopago') {
+      try {
+        const { preferenciaId, urlPago } = await crearPreferencia({
+          pedidoId: id,
+          folio,
+          token,
+          totalCentavos: subtotal + envio,
+          venceEn: pagoVenceEn,
+          compradorEmail: sesion.user.email,
+          compradorNombre: sesion.user.name,
+        })
+        await db.update(pedidos).set({ mpPreferenciaId: preferenciaId }).where(eq(pedidos.id, id))
+        return { ok: true, token, urlPago }
+      } catch (error) {
+        // El pedido ya existe; el cliente podrá reintentar desde la página de su pedido
+        console.error('No se pudo crear la preferencia de Mercado Pago:', error)
+      }
+    }
+
     return { ok: true, token }
   } catch (error) {
     if (error instanceof ErrorCupoLleno) {

@@ -9,10 +9,12 @@ import { whatsappMexico } from '@/lib/pedidos'
 import { formatearPrecio } from '@/lib/utils'
 import { obtenerPedidoAdmin } from '@/server/consultas/pedidos-admin'
 import { AccionesPedido } from '@/components/admin/AccionesPedido'
-import { ESTADOS_PAGO, ESTADOS_TRABAJO } from '@/lib/pedidos'
+import { ESTADOS_PAGO, ESTADOS_TRABAJO, DETALLES_MERCADO_PAGO } from '@/lib/pedidos'
 import { urlTemporalPrivada } from '@/lib/r2'
 import { MapaInteractivo } from '@/components/sitio/MapaInteractivo'
 import { obtenerAjustes } from '@/server/consultas/ajustes'
+import { ResolverPagoMP } from '@/components/admin/ResolverPagoMP'
+import { ESTADOS_MERCADO_PAGO } from '@/lib/pedidos'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -115,6 +117,14 @@ async function Contenido({ params }: Props) {
                         ) : (
                             <p className="text-xs text-texto-suave">El cliente no marcó ubicación en el mapa; guíate por la dirección y referencias.</p>
                         )}
+                        <a
+                            href={`/admin/pedidos/${p.id}/hoja`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-texto px-4 py-2 text-xs font-semibold text-fondo hover:opacity-90"
+                        >
+                            🖨 Imprimir hoja de entrega
+                        </a>
                     </Seccion>
 
                     <Seccion titulo="Productos">
@@ -156,39 +166,82 @@ async function Contenido({ params }: Props) {
                 </div>
 
                 <div className="space-y-5">
-                    <Seccion titulo="Pago por transferencia">
-                        <div className="space-y-1">
-                            <p><span className="text-texto-suave">Monto esperado:</span> <strong>{formatearPrecio(p.totalCentavos)}</strong></p>
-                            <p><span className="text-texto-suave">Concepto:</span> <span className="font-mono">{p.folio}</span></p>
-                            {p.pagoVenceEn && p.estadoPago === 'pendiente' && (
-                                <p><span className="text-texto-suave">Plazo hasta:</span> {formatoFechaHora.format(p.pagoVenceEn)}</p>
-                            )}
-                            {p.motivoRechazo && <p className="text-red-700">Rechazado: {p.motivoRechazo}</p>}
-                        </div>
+                    {p.metodoPago === 'mercadopago' ? (
+                        <Seccion titulo="Pago con Mercado Pago">
+                            <dl className="space-y-1.5 text-sm">
+                                <div className="flex justify-between gap-3">
+                                    <dt className="text-texto-suave">Monto</dt>
+                                    <dd className="font-semibold text-texto">{formatearPrecio(p.totalCentavos)}</dd>
+                                </div>
+                                <div className="flex justify-between gap-3">
+                                    <dt className="text-texto-suave">Estado en Mercado Pago</dt>
+                                    <dd className="text-texto">{p.mpEstado ? (ESTADOS_MERCADO_PAGO[p.mpEstado] ?? p.mpEstado) : 'Sin intentos de pago'}</dd>
+                                </div>
+                                {p.mpPagoId && (
+                                    <div className="flex justify-between gap-3">
+                                        <dt className="text-texto-suave">Operación</dt>
+                                        <dd className="font-mono text-texto">#{p.mpPagoId}</dd>
+                                    </div>
+                                )}
+                                {p.mpDetalle && (
+                                    <div className="flex justify-between gap-3">
+                                        <dt className="text-texto-suave">Detalle</dt>
+                                        <dd className="text-right text-xs text-texto-suave">{DETALLES_MERCADO_PAGO[p.mpDetalle] ?? p.mpDetalle}</dd>
+                                    </div>
+                                )}
+                            </dl>
 
-                        {urlComprobante ? (
-                            <div className="space-y-2">
-                                {p.comprobanteTipo?.startsWith('image/') ? (
-                                    <a href={urlComprobante} target="_blank" rel="noopener noreferrer">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src={urlComprobante} alt="Comprobante de pago" className="max-h-96 w-full rounded-xl border border-borde object-contain" />
-                                    </a>
-                                ) : (
-                                    <a href={urlComprobante} target="_blank" rel="noopener noreferrer" className="font-medium text-primario hover:underline">
-                                        Abrir comprobante (PDF)
-                                    </a>
-                                )}
-                                {p.comprobanteSubidoEn && <p className="text-xs text-texto-suave">Subido {formatoFechaHora.format(p.comprobanteSubidoEn)}</p>}
-                                {p.estadoPago === 'en_revision' && (
-                                    <p className="rounded-xl bg-amber-50 p-2 text-xs text-amber-900">
-                                        Antes de registrar el pago, confirma en tu banca en línea que llegó el monto exacto con este folio. Los comprobantes pueden alterarse.
+                            <p className="mt-3 text-xs text-texto-suave">
+                                Se confirma solo. Para ver el pago o devolver el dinero, búscalo en Mercado Pago → Actividad con el número de operación.
+                            </p>
+
+                            {p.pagoTardio && (
+                                <div className="mt-4 space-y-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900">
+                                    <p className="font-semibold">Este pago necesita revisión</p>
+                                    <p className="text-xs">
+                                        Revisa el historial: puede ser un pago que llegó cuando el pedido ya había vencido, un pago duplicado, un monto que no coincide o un contracargo.
+                                        Decide si reprogramas el pedido o devuelves el dinero desde Mercado Pago, y después márcalo como resuelto.
                                     </p>
+                                    <ResolverPagoMP id={p.id} />
+                                </div>
+                            )}
+                        </Seccion>
+                    ) : (
+                        <Seccion titulo="Pago por transferencia">
+                            <div className="space-y-1">
+                                <p><span className="text-texto-suave">Monto esperado:</span> <strong>{formatearPrecio(p.totalCentavos)}</strong></p>
+                                <p><span className="text-texto-suave">Concepto:</span> <span className="font-mono">{p.folio}</span></p>
+                                {p.pagoVenceEn && p.estadoPago === 'pendiente' && (
+                                    <p><span className="text-texto-suave">Plazo hasta:</span> {formatoFechaHora.format(p.pagoVenceEn)}</p>
                                 )}
+                                {p.motivoRechazo && <p className="text-red-700">Rechazado: {p.motivoRechazo}</p>}
                             </div>
-                        ) : (
-                            <p className="text-texto-suave">{p.estadoPago === 'pendiente' ? 'El cliente aún no sube su comprobante.' : 'Sin comprobante.'}</p>
-                        )}
-                    </Seccion>
+
+                            {urlComprobante ? (
+                                <div className="space-y-2">
+                                    {p.comprobanteTipo?.startsWith('image/') ? (
+                                        <a href={urlComprobante} target="_blank" rel="noopener noreferrer">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={urlComprobante} alt="Comprobante de pago" className="max-h-96 w-full rounded-xl border border-borde object-contain" />
+                                        </a>
+                                    ) : (
+                                        <a href={urlComprobante} target="_blank" rel="noopener noreferrer" className="font-medium text-primario hover:underline">
+                                            Abrir comprobante (PDF)
+                                        </a>
+                                    )}
+                                    {p.comprobanteSubidoEn && <p className="text-xs text-texto-suave">Subido {formatoFechaHora.format(p.comprobanteSubidoEn)}</p>}
+                                    {p.estadoPago === 'en_revision' && (
+                                        <p className="rounded-xl bg-amber-50 p-2 text-xs text-amber-900">
+                                            Antes de registrar el pago, confirma en tu banca en línea que llegó el monto exacto con este folio. Los comprobantes pueden alterarse.
+                                        </p>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="text-texto-suave">{p.estadoPago === 'pendiente' ? 'El cliente aún no sube su comprobante.' : 'Sin comprobante.'}</p>
+                            )}
+                        </Seccion>
+                    )}
+
                     <Seccion titulo="Estado">
                         <AccionesPedido pedidoId={p.id} estadoPago={p.estadoPago} estadoTrabajo={p.estadoTrabajo} />
                     </Seccion>

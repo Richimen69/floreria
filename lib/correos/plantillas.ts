@@ -202,3 +202,18 @@ export function pedidoEntregado(m: Marca, ped: PedidoCorreo) {
         texto: `Entregamos tu pedido ${ped.folio}${ped.destinatarioNombre ? ` a ${ped.destinatarioNombre}` : ''}. ¡Gracias por tu compra!`,
     }
 }
+
+export function pedidoRecibidoMercadoPago(m: Marca, ped: PedidoCorreo, horaLimite: string) {
+  const url = `${m.sitioUrl}/pedido/${ped.token}`
+  return {
+    asunto: `Pedido ${ped.folio} recibido`,
+    html: plantilla(
+      m,
+      `¡Gracias, ${ped.compradorNombre}!`,
+      p(`Recibimos tu pedido <strong>${escapar(ped.folio)}</strong>. Si aún no completas el pago, hazlo <strong>antes de las ${escapar(horaLimite)}</strong>; si no, el pedido se cancela y el horario se libera.`) +
+        boton(url, 'Ver mi pedido y pagar', m.color) +
+        resumenPedido(ped),
+    ),
+    texto: `Recibimos tu pedido ${ped.folio}. Si aún no pagas, completa el pago antes de las ${horaLimite} en: ${url}`,
+  }
+}

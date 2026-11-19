@@ -10,21 +10,27 @@ import { VolverAPedir } from '@/components/sitio/VolverAPedir'
 import { obtenerAjustes } from '@/server/consultas/ajustes'
 import { vencerPedidosExpirados } from '@/server/vencimientos'
 import { PagoTransferencia } from '@/components/sitio/PagoTransferencia'
+import { PagoMercadoPago } from '@/components/sitio/PagoMercadoPago'
 import { ESTADOS_PAGO } from '@/lib/pedidos'
+import { EsperarConfirmacion } from '@/components/sitio/EsperarConfirmacion'
 
 export const metadata: Metadata = { title: 'Tu pedido', robots: { index: false, follow: false } }
 
-type Props = { params: Promise<{ token: string }> }
+type Props = {
+    params: Promise<{ token: string }>
+    searchParams: Promise<{ pago?: string }>
+}
 
-
-async function Detalle({ params }: Props) {
+async function Detalle({ params, searchParams }: Props) {
     const { token } = await params
+    const { pago: regreso } = await searchParams
     await vencerPedidosExpirados()
 
     const [p, ajustes] = await Promise.all([obtenerPedidoPorToken(token), obtenerAjustes()])
     if (!p) notFound()
 
     const pago = ESTADOS_PAGO[p.estadoPago]
+    const esMercadoPago = p.metodoPago === 'mercadopago'
 
     return (
         <div className="mx-auto max-w-2xl space-y-6 px-4 pt-8 sm:px-6 sm:pt-12">
@@ -32,35 +38,71 @@ async function Detalle({ params }: Props) {
                 <p className="text-sm text-texto-suave">Pedido</p>
                 <h1 className="font-titulos text-4xl font-semibold tracking-wide text-texto">{p.folio}</h1>
                 <span className={`mt-3 inline-block rounded-full px-3 py-1 text-sm font-semibold ${pago.clase}`}>{pago.texto}</span>
-                {p.estadoPago === 'pendiente' && p.metodoPago === 'transferencia' && p.pagoVenceEn && ajustes.clabe && (
-                    <PagoTransferencia
-                        token={p.token}
-                        folio={p.folio}
-                        totalCentavos={p.totalCentavos}
-                        venceEn={p.pagoVenceEn.toISOString()}
-                        banco={ajustes.banco ?? ''}
-                        titular={ajustes.titularCuenta ?? ''}
-                        clabe={ajustes.clabe}
-                    />
-                )}
-
-                {p.estadoPago === 'en_revision' && (
-                    <p className="rounded-tarjeta bg-blue-50 p-4 text-center text-sm text-blue-900">
-                        Recibimos tu comprobante. Lo estamos verificando y te avisaremos en cuanto se confirme el pago.
-                    </p>
-                )}
-
-                {(p.estadoPago === 'rechazado' || p.estadoPago === 'vencido') && (
-                    <div className="space-y-3 rounded-tarjeta bg-red-50 p-5 text-center text-sm text-red-900">
-                        <p>
-                            {p.estadoPago === 'vencido'
-                                ? 'No recibimos tu comprobante a tiempo, así que el pedido se canceló y el horario se liberó.'
-                                : `No pudimos confirmar tu pago${p.motivoRechazo ? `: ${p.motivoRechazo}` : '.'} El pedido se canceló.`}
-                        </p>
-                        <VolverAPedir items={p.items.map((i) => ({ productoId: i.productoId, cantidad: i.cantidad }))} />
-                    </div>
-                )}
             </div>
+
+            {/* ───────── Pago por transferencia ───────── */}
+            {p.estadoPago === 'pendiente' && p.metodoPago === 'transferencia' && p.pagoVenceEn && ajustes.clabe && (
+                <PagoTransferencia
+                    token={p.token}
+                    folio={p.folio}
+                    totalCentavos={p.totalCentavos}
+                    venceEn={p.pagoVenceEn.toISOString()}
+                    banco={ajustes.banco ?? ''}
+                    titular={ajustes.titularCuenta ?? ''}
+                    clabe={ajustes.clabe}
+                />
+            )}
+
+            {p.estadoPago === 'en_revision' && (
+                <p className="rounded-tarjeta bg-blue-50 p-4 text-center text-sm text-blue-900">
+                    {esMercadoPago
+                        ? 'Mercado Pago está revisando tu pago. Te avisaremos por correo en cuanto se confirme.'
+                        : 'Recibimos tu comprobante. Lo estamos verificando y te avisaremos en cuanto se confirme el pago.'}
+                </p>
+            )}
+
+            {/* ───────── Pago con Mercado Pago ───────── */}
+            {p.estadoPago === 'pendiente' && regreso === 'aprobado' && (
+                <>
+                    <EsperarConfirmacion />
+                    <p className="rounded-tarjeta bg-green-50 p-4 text-center text-sm text-green-800">
+                        ¡Recibimos tu pago! Lo estamos confirmando con Mercado Pago; esta página se actualizará en unos segundos.
+                    </p>
+                </>
+            )}
+            {p.estadoPago === 'pendiente' && esMercadoPago && p.mpEstado === 'in_process' && regreso !== 'aprobado' && (
+                <p className="rounded-tarjeta bg-blue-50 p-4 text-center text-sm text-blue-900">
+                    Mercado Pago está revisando tu pago. Te avisaremos por correo en cuanto se confirme.
+                </p>
+            )}
+            {p.estadoPago === 'pendiente' && regreso === 'pendiente' && (
+                <p className="rounded-tarjeta bg-blue-50 p-4 text-center text-sm text-blue-900">
+                    Tu pago está en proceso. Te avisaremos por correo en cuanto se confirme.
+                </p>
+            )}
+            {p.estadoPago === 'pendiente' && regreso === 'fallido' && (
+                <p className="rounded-tarjeta bg-red-50 p-4 text-center text-sm text-red-800">
+                    El pago no se completó. Puedes intentarlo de nuevo con otra tarjeta.
+                </p>
+            )}
+
+            {p.estadoPago === 'pendiente' && esMercadoPago && p.pagoVenceEn && regreso !== 'aprobado' && (
+                <PagoMercadoPago token={p.token} totalCentavos={p.totalCentavos} venceEn={p.pagoVenceEn.toISOString()} />
+            )}
+
+            {/* ───────── Pedido cancelado por pago ───────── */}
+            {(p.estadoPago === 'rechazado' || p.estadoPago === 'vencido') && (
+                <div className="space-y-3 rounded-tarjeta bg-red-50 p-5 text-center text-sm text-red-900">
+                    <p>
+                        {p.estadoPago === 'vencido'
+                            ? esMercadoPago
+                                ? 'No se completó el pago a tiempo, así que el pedido se canceló y el horario se liberó.'
+                                : 'No recibimos tu comprobante a tiempo, así que el pedido se canceló y el horario se liberó.'
+                            : `No pudimos confirmar tu pago${p.motivoRechazo ? `: ${p.motivoRechazo}` : '.'} El pedido se canceló.`}
+                    </p>
+                    <VolverAPedir items={p.items.map((i) => ({ productoId: i.productoId, cantidad: i.cantidad }))} />
+                </div>
+            )}
 
             <section className="space-y-3 rounded-tarjeta border border-borde bg-superficie p-5 text-sm">
                 <h2 className="font-titulos text-lg font-semibold text-texto">Entrega</h2>
@@ -79,19 +121,19 @@ async function Detalle({ params }: Props) {
                     </p>
                 )}
 
-                {/* ↓↓↓ Tarjeta de dedicatoria (esto es lo nuevo) ↓↓↓ */}
                 {p.tarjetaEnBlanco ? (
                     <p className="text-texto-suave">Tarjeta en blanco</p>
-                ) : p.mensajeTarjeta && (
-                    <div className="rounded-xl bg-amber-50 p-4 text-stone-800">
-                        {p.paraTarjeta && <p className="text-xs text-stone-600">Para: {p.paraTarjeta}</p>}
-                        <p className="mt-1 font-titulos text-lg">“{p.mensajeTarjeta}”</p>
-                        <p className="mt-2 text-sm text-stone-600">
-                            {p.anonimo ? '— Anónimo' : p.firmaTarjeta && `— ${p.firmaTarjeta}`}
-                        </p>
-                    </div>
+                ) : (
+                    p.mensajeTarjeta && (
+                        <div className="rounded-xl bg-amber-50 p-4 text-stone-800">
+                            {p.paraTarjeta && <p className="text-xs text-stone-600">Para: {p.paraTarjeta}</p>}
+                            <p className="mt-1 font-titulos text-lg">“{p.mensajeTarjeta}”</p>
+                            <p className="mt-2 text-sm text-stone-600">
+                                {p.anonimo ? '— Anónimo' : p.firmaTarjeta && `— ${p.firmaTarjeta}`}
+                            </p>
+                        </div>
+                    )
                 )}
-                {/* ↑↑↑ Fin de la tarjeta ↑↑↑ */}
             </section>
 
             <section className="space-y-3 rounded-tarjeta border border-borde bg-superficie p-5 text-sm">
@@ -123,10 +165,10 @@ async function Detalle({ params }: Props) {
     )
 }
 
-export default function PedidoPage({ params }: Props) {
+export default function PedidoPage({ params, searchParams }: Props) {
     return (
         <Suspense fallback={<div className="mx-auto mt-12 h-96 max-w-2xl animate-pulse rounded-tarjeta bg-borde" />}>
-            <Detalle params={params} />
+            <Detalle params={params} searchParams={searchParams} />
         </Suspense>
     )
 }

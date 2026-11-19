@@ -76,6 +76,7 @@ export const esquemaFinal = z.object({
     compradorTelefono: telefono('Escribe tu celular de 10 dígitos'),
     notas: opcional(300),
     aceptaLegales: z.string().optional().transform((v) => v === 'on'),
+    metodoPago: z.enum(['transferencia', 'mercadopago'], { error: 'Elige cómo quieres pagar' }),
 })
 
 export type ErroresCampos = Record<string, string[] | undefined>

@@ -1,5 +1,5 @@
 import 'server-only'
-import { and, count, eq, isNotNull, lte, sql } from 'drizzle-orm'
+import { and, asc, count, eq, isNotNull, lte, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import { insumos, pedidos, productos } from '@/db/schema'
 import { sumarDias } from '@/lib/fechas'
@@ -37,4 +37,12 @@ export async function alertasCatalogo() {
   ])
 
   return { agotados: agotados.total, sinExistencias: sinExistencias.total, insumosBajos: insumosBajos.total }
+}
+
+export async function pagosMercadoPagoPorRevisar() {
+  return db
+    .select({ id: pedidos.id, folio: pedidos.folio })
+    .from(pedidos)
+    .where(eq(pedidos.pagoTardio, true))
+    .orderBy(asc(pedidos.id))
 }

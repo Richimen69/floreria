@@ -17,6 +17,37 @@ export const ESTADOS_PAGO = {
     reembolsado: { texto: 'Reembolsado', clase: 'bg-fondo text-texto-suave' },
 } as const
 
+export const DETALLES_MERCADO_PAGO: Record<string, string> = {
+    accredited: 'Acreditado',
+    pending_contingency: 'En revisión',
+    pending_review_manual: 'En revisión manual',
+    cc_rejected_insufficient_amount: 'Fondos insuficientes',
+    cc_rejected_bad_filled_security_code: 'Código de seguridad incorrecto',
+    cc_rejected_bad_filled_date: 'Fecha de vencimiento incorrecta',
+    cc_rejected_bad_filled_other: 'Datos de tarjeta incorrectos',
+    cc_rejected_call_for_authorize: 'El banco pide autorizar el pago',
+    cc_rejected_high_risk: 'Rechazado por seguridad',
+    cc_rejected_other_reason: 'Rechazado por el banco',
+    expired: 'Vencido',
+}
+
+export const ESTADOS_MERCADO_PAGO: Record<string, string> = {
+    approved: 'Aprobado',
+    authorized: 'Autorizado',
+    pending: 'Pendiente',
+    in_process: 'En revisión por Mercado Pago',
+    in_mediation: 'En disputa',
+    rejected: 'Rechazado',
+    cancelled: 'Cancelado',
+    refunded: 'Reembolsado',
+    charged_back: 'Contracargo',
+}
+
+export const METODOS_PAGO: Record<string, string> = {
+    transferencia: 'Transferencia',
+    mercadopago: 'Mercado Pago',
+}
+
 export type EstadoTrabajo = keyof typeof ESTADOS_TRABAJO
 export type EstadoPago = keyof typeof ESTADOS_PAGO
 
@@ -30,8 +61,7 @@ export function whatsappMexico(telefono: string | null, mensaje?: string) {
     return `https://wa.me/${numero}${mensaje ? `?text=${encodeURIComponent(mensaje)}` : ''}`
 }
 
-type EstadoActual = { estadoPago: EstadoPago; estadoTrabajo: EstadoTrabajo }
-
+type EstadoActual = { estadoPago: EstadoPago; estadoTrabajo: EstadoTrabajo; metodoPago?: string }
 // Hacia dónde puede moverse cada estado (cancelar es una acción aparte)
 export const FLUJO_TRABAJO: Record<EstadoTrabajo, EstadoTrabajo[]> = {
     nuevo: ['preparando'],
@@ -60,6 +90,9 @@ export function esRetroceso(de: EstadoTrabajo, a: EstadoTrabajo) {
 
 // Devuelve null si el cambio es válido, o el motivo por el que no lo es
 export function revisarCambio(p: EstadoActual, tipo: 'pago' | 'trabajo', destino: string): string | null {
+    if (tipo === 'pago' && destino === 'pagado' && p.metodoPago === 'mercadopago') {
+        return 'Los pagos con Mercado Pago se confirman solos'
+    }
     if (tipo === 'trabajo') {
         const a = destino as EstadoTrabajo
         if (p.estadoTrabajo === 'cancelado') return 'El pedido está cancelado'

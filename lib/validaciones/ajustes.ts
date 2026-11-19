@@ -40,6 +40,7 @@ const coordenadas = z
 
 export const esquemaAjustes = z.object({
   nombre: z.string().trim().min(1, 'El nombre es obligatorio').max(100),
+  mercadoPagoActivo: z.string().optional().transform((v) => v === 'on'),
   correoAvisos: z
     .string()
     .trim()

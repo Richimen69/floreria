@@ -6,6 +6,7 @@ import { obtenerSesion } from '@/lib/permisos'
 import { obtenerAjustes } from '@/server/consultas/ajustes'
 import { validarCheckout } from '@/lib/validaciones/checkout'
 import { legalesPublicadas } from '@/server/consultas/legales'
+import { mercadoPagoDisponible } from '@/lib/mercadopago'
 
 export const metadata: Metadata = { title: 'Finalizar pedido', robots: { index: false } }
 
@@ -19,7 +20,12 @@ async function Contenido() {
         <VistaCheckout
             whatsapp={a.whatsapp}
             usuario={{ nombre: sesion.user.name, email: sesion.user.email, telefono: sesion.user.telefono ?? '' }}
-            pago={{ activo: a.transferenciaActiva, banco: a.banco, plazoMinutos: a.plazoPagoMinutos }}
+            pago={{
+                transferencia: a.transferenciaActiva,
+                mercadoPago: a.mercadoPagoActivo && mercadoPagoDisponible(),
+                banco: a.banco,
+                plazoMinutos: a.plazoPagoMinutos,
+            }}
             legales={legales}
         />
     )

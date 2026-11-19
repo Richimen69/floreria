@@ -54,7 +54,7 @@ function Bloque({ titulo, descripcion, children }: { titulo: string; descripcion
 type Props = {
     whatsapp: string | null
     usuario: { nombre: string; email: string; telefono: string }
-    pago: { activo: boolean; banco: string | null; plazoMinutos: number }
+    pago: { transferencia: boolean; mercadoPago: boolean; banco: string | null; plazoMinutos: number }
     legales: { slug: string; titulo: string }[]
 }
 
@@ -95,6 +95,11 @@ export function VistaCheckout({ whatsapp, usuario, pago, legales }: Props) {
     const [errores, setErrores] = useState<ErroresCampos>({})
     const [aviso, setAviso] = useState<{ texto: string; volverAlCarrito?: boolean } | null>(null)
     const [enviando, iniciar] = useTransition()
+
+    const [metodo, setMetodo] = useState<'transferencia' | 'mercadopago'>(
+        pago.mercadoPago && !pago.transferencia ? 'mercadopago' : 'transferencia',
+    )
+    const hayMetodos = pago.transferencia || pago.mercadoPago
 
     useEffect(() => {
         if (estado.items.length === 0) return
@@ -194,7 +199,11 @@ export function VistaCheckout({ whatsapp, usuario, pago, legales }: Props) {
             const r = await crearPedido(datos)
             if (r.ok) {
                 carrito.vaciar()
-                router.push(`/pedido/${r.token}`)
+                if (r.urlPago) {
+                    window.location.assign(r.urlPago) // página de pago de Mercado Pago
+                } else {
+                    router.push(`/pedido/${r.token}`)
+                }
                 return
             }
             if (r.requiereCuenta) return router.push('/cuenta/entrar?volver=/checkout')
@@ -459,27 +468,58 @@ export function VistaCheckout({ whatsapp, usuario, pago, legales }: Props) {
                         </Bloque>
 
                         <Bloque titulo="Método de pago">
-                            {pago.activo ? (
-                                <>
-                                    <label className="flex items-start gap-3 rounded-xl border border-primario bg-primario-suave p-4">
-                                        <input type="radio" checked readOnly className="mt-0.5 accent-primario" />
-                                        <span>
-                                            <span className="block text-sm font-semibold text-texto">Transferencia bancaria (SPEI)</span>
-                                            <span className="block text-xs text-texto-suave">
-                                                {pago.banco ? `Cuenta ${pago.banco}. ` : ''}Al confirmar te mostramos la CLABE y el monto.
-                                            </span>
-                                        </span>
-                                    </label>
-                                    <p className={`rounded-xl p-3 text-sm ${minutosParaPagar < 20 ? 'bg-red-50 text-red-800' : 'bg-fondo text-texto-suave'}`}>
-                                        Tendrás hasta las <strong>{horaLimite}</strong> ({minutosParaPagar} min) para hacer la transferencia y subir tu comprobante.
-                                        Si no lo recibimos a tiempo, el pedido se cancela y el horario se libera.
-                                        {minutosParaPagar < 20 && ' Es poco tiempo: si no alcanzas, elige un horario más tarde.'}
-                                    </p>
-                                </>
-                            ) : (
+                            {!hayMetodos ? (
                                 <p className="rounded-xl bg-red-50 p-3 text-sm text-red-800">
                                     Por el momento no estamos recibiendo pagos en línea. Escríbenos por WhatsApp para hacer tu pedido.
                                 </p>
+                            ) : (
+                                <>
+                                    <div className="grid gap-2">
+                                        {pago.mercadoPago && (
+                                            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-borde p-4 has-checked:border-primario has-checked:bg-primario-suave">
+                                                <input
+                                                    type="radio"
+                                                    name="metodoPago"
+                                                    value="mercadopago"
+                                                    checked={metodo === 'mercadopago'}
+                                                    onChange={() => setMetodo('mercadopago')}
+                                                    className="mt-0.5 accent-primario"
+                                                />
+                                                <span>
+                                                    <span className="block text-sm font-semibold text-texto">Tarjeta o Mercado Pago</span>
+                                                    <span className="block text-xs text-texto-suave">Crédito, débito o saldo de Mercado Pago. Tu pago se confirma al instante.</span>
+                                                </span>
+                                            </label>
+                                        )}
+                                        {pago.transferencia && (
+                                            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-borde p-4 has-checked:border-primario has-checked:bg-primario-suave">
+                                                <input
+                                                    type="radio"
+                                                    name="metodoPago"
+                                                    value="transferencia"
+                                                    checked={metodo === 'transferencia'}
+                                                    onChange={() => setMetodo('transferencia')}
+                                                    className="mt-0.5 accent-primario"
+                                                />
+                                                <span>
+                                                    <span className="block text-sm font-semibold text-texto">Transferencia bancaria (SPEI)</span>
+                                                    <span className="block text-xs text-texto-suave">
+                                                        {pago.banco ? `Cuenta ${pago.banco}. ` : ''}Al confirmar te mostramos la CLABE; después subes tu comprobante.
+                                                    </span>
+                                                </span>
+                                            </label>
+                                        )}
+                                    </div>
+
+                                    <p className={`rounded-xl p-3 text-sm ${minutosParaPagar < 20 ? 'bg-red-50 text-red-800' : 'bg-fondo text-texto-suave'}`}>
+                                        {metodo === 'mercadopago'
+                                            ? <>Tendrás hasta las <strong>{horaLimite}</strong> ({minutosParaPagar} min) para completar el pago.</>
+                                            : <>Tendrás hasta las <strong>{horaLimite}</strong> ({minutosParaPagar} min) para transferir y subir tu comprobante.</>}
+                                        {' '}Si no se completa a tiempo, el pedido se cancela y el horario se libera.
+                                        {minutosParaPagar < 20 && ' Es poco tiempo: si no alcanzas, elige un horario más tarde.'}
+                                    </p>
+                                    {err('metodoPago') && <p className="text-xs text-red-700">{err('metodoPago')}</p>}
+                                </>
                             )}
                         </Bloque>
 
@@ -530,10 +570,18 @@ export function VistaCheckout({ whatsapp, usuario, pago, legales }: Props) {
                         )}
                         <button
                             type="submit"
-                            disabled={enviando || (paso === 3 && !pago.activo)}
+                            disabled={enviando || (paso === 3 && !hayMetodos)}
                             className="rounded-full bg-primario px-6 py-3 text-sm font-semibold text-sobre-primario hover:bg-primario-oscuro disabled:opacity-60"
                         >
-                            {paso === 1 ? 'Continuar a dedicatoria' : paso === 2 ? 'Continuar' : enviando ? 'Registrando pedido…' : 'Confirmar pedido'}
+                            {paso === 1
+                                ? 'Continuar a dedicatoria'
+                                : paso === 2
+                                    ? 'Continuar'
+                                    : enviando
+                                        ? 'Registrando pedido…'
+                                        : metodo === 'mercadopago'
+                                            ? 'Continuar al pago'
+                                            : 'Confirmar pedido'}
                         </button>
                     </div>
                 </div>

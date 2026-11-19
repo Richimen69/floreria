@@ -305,6 +305,14 @@ export function FormAjustes({ ajustes }: { ajustes: AjustesSitio }) {
               error={err('plazoPagoMinutos')}
               ayuda="120 = 2 horas. Nunca pasa del cierre del horario elegido"
             />
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-borde p-4 md:col-span-2">
+              <input type="checkbox" name="mercadoPagoActivo" defaultChecked={ajustes.mercadoPagoActivo} className="mt-0.5 h-4 w-4 accent-primario" />
+              <span>
+                <span className="block text-sm font-medium text-texto">Aceptar pagos con Mercado Pago</span>
+                <span className="block text-xs text-texto-suave">Tarjeta de crédito, débito o saldo de Mercado Pago. Se confirman solos, sin revisar comprobantes.</span>
+              </span>
+            </label>
           </Seccion>
 
           <Seccion

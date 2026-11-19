@@ -26,6 +26,11 @@ export const pedidos = pgTable(
         estadoTrabajo: estadoTrabajo('estado_trabajo').notNull().default('nuevo'),
         metodoPago: metodoPago('metodo_pago').notNull().default('transferencia'),
         pagoVenceEn: timestamp('pago_vence_en', { withTimezone: true }), // límite para subir el comprobante
+        mpPreferenciaId: text('mp_preferencia_id'), // el "enlace de pago" creado en Mercado Pago
+        mpPagoId: text('mp_pago_id'),               // el pago aprobado (o el último intento)
+        mpEstado: text('mp_estado'),                // último estado reportado por Mercado Pago
+        mpDetalle: text('mp_detalle'),              // detalle del estado, para el panel
+        pagoTardio: boolean('pago_tardio').notNull().default(false), // se aprobó cuando el pedido ya no estaba vigente
         comprobanteKey: text('comprobante_key'),                         // ruta en el bucket privado
         comprobanteTipo: text('comprobante_tipo'),
         comprobanteSubidoEn: timestamp('comprobante_subido_en', { withTimezone: true }),

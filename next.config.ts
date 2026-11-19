@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: { bodySizeLimit: "6mb" },
   },
+  allowedDevOrigins: ['*.trycloudflare.com'],
+  serverExternalPackages: ['@react-pdf/renderer'],
   images: {
     remotePatterns: [new URL(`${process.env.R2_PUBLIC_URL}/**`)],
   },

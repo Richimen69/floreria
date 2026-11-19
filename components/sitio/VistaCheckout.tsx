@@ -269,7 +269,10 @@ export function VistaCheckout({ whatsapp, usuario, pago, legales }: Props) {
                                 </div>
                                 <SelectorColonia seleccionada={colonia} onSeleccionar={setColonia} error={err('coloniaId')} />
                                 <Campo id="referencias" etiqueta="Entre calles y referencias" placeholder="Frente a la farmacia, portón negro" ayuda="Ayuda al repartidor a encontrar el lugar" />
-                                <SelectorUbicacion error={err('entregaLatitud') ?? err('entregaLongitud')} />
+                                <SelectorUbicacion
+                                    error={err('entregaLatitud') ?? err('entregaLongitud')}
+                                    centro={colonia?.latitud != null && colonia?.longitud != null ? { lat: colonia.latitud, lng: colonia.longitud } : null}
+                                />
                             </div>
 
                             <fieldset>

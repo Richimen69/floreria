@@ -8,7 +8,7 @@ const CENTRO_ACAPULCO: [number, number] = [-99.8901, 16.8634] // [longitud, lati
 
 type Punto = { lat: number; lng: number }
 
-export function SelectorUbicacion({ error }: { error?: string }) {
+export function SelectorUbicacion({ error, centro }: { error?: string; centro?: { lat: number; lng: number } | null }) {
   const contenedor = useRef<HTMLDivElement>(null)
   const mapa = useRef<MapaLibre | null>(null)
   const marcador = useRef<Marcador | null>(null)
@@ -16,6 +16,10 @@ export function SelectorUbicacion({ error }: { error?: string }) {
   const [ubicando, setUbicando] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
 
+  // Para que el mapa empiece en la colonia si ya estaba elegida al cargar
+  const centroInicial = useRef(centro)
+
+  // 1) Crear el mapa (una sola vez)
   useEffect(() => {
     let cancelado = false
 
@@ -24,11 +28,12 @@ export function SelectorUbicacion({ error }: { error?: string }) {
       maplibregl.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs')
       if (cancelado || !contenedor.current) return
 
+      const inicio = centroInicial.current
       const m = new maplibregl.Map({
         container: contenedor.current,
         style: 'https://tiles.openfreemap.org/styles/liberty', // con calles y nombres, mejor para ubicar
-        center: CENTRO_ACAPULCO,
-        zoom: 12,
+        center: inicio ? [inicio.lng, inicio.lat] : CENTRO_ACAPULCO,
+        zoom: inicio ? 15 : 12,
         cooperativeGestures: true,
         attributionControl: { compact: true },
         locale: {
@@ -64,6 +69,19 @@ export function SelectorUbicacion({ error }: { error?: string }) {
     }
   }, [])
 
+  // 2) Al elegir otra colonia, llevar el mapa hasta ella
+  const centroLat = centro?.lat
+  const centroLng = centro?.lng
+  useEffect(() => {
+    if (centroLat == null || centroLng == null) return
+    if (mapa.current) {
+      mapa.current.flyTo({ center: [centroLng, centroLat], zoom: 15 })
+    } else {
+      // El mapa todavía está cargando: que empiece en la colonia
+      centroInicial.current = { lat: centroLat, lng: centroLng }
+    }
+  }, [centroLat, centroLng])
+
   function colocar(p: Punto) {
     setPunto(p)
     if (mapa.current && marcador.current) {
@@ -98,27 +116,23 @@ export function SelectorUbicacion({ error }: { error?: string }) {
     <div className="space-y-2 sm:col-span-2">
       <div>
         <span className="block text-sm font-medium text-texto">Ubicación en el mapa (recomendado)</span>
-        <span className="block text-xs text-texto-suave">Toca el mapa donde se entregará y arrastra el pin para afinarlo. Ayuda mucho al repartidor.</span>
+        <span className="block text-xs text-texto-suave">
+          {centro
+            ? 'Te mostramos tu colonia. Toca el punto exacto de entrega y arrastra el pin para afinarlo.'
+            : 'Elige tu colonia y te llevamos ahí; luego toca el punto exacto de entrega.'}
+        </span>
       </div>
 
       <div ref={contenedor} className="h-72 w-full overflow-hidden rounded-xl border border-borde bg-primario-suave sm:h-80" />
 
       <div className="flex flex-wrap items-center gap-3 text-sm">
-        <button
-          type="button"
-          onClick={usarMiUbicacion}
-          disabled={ubicando}
-          className="rounded-full border border-borde px-4 py-2 font-medium text-texto hover:border-primario disabled:opacity-60"
-        >
-          {ubicando ? 'Buscando…' : '📍 Usar mi ubicación'}
-        </button>
         {punto ? (
           <>
             <span className="font-medium text-green-700">✓ Ubicación marcada</span>
             <button type="button" onClick={quitar} className="text-texto-suave hover:text-red-700">Quitar</button>
           </>
         ) : (
-          <span className="text-xs text-texto-suave">“Usar mi ubicación” solo sirve si estás en el lugar de entrega.</span>
+          <span className="text-xs text-texto-suave"></span>
         )}
       </div>
 

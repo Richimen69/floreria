@@ -11,6 +11,8 @@ export type ColoniaEncontrada = {
   cp: string
   conCobertura: boolean
   costoCentavos: number | null
+  latitud: number | null
+  longitud: number | null
 }
 
 export async function buscarColonias(texto: string): Promise<ColoniaEncontrada[]> {
@@ -27,6 +29,8 @@ export async function buscarColonias(texto: string): Promise<ColoniaEncontrada[]
       cp: colonias.cp,
       costoCentavos: zonasEnvio.costoCentavos,
       zonaActiva: zonasEnvio.activa,
+      latitud: colonias.latitud,
+      longitud: colonias.longitud,
     })
     .from(colonias)
     .leftJoin(zonasEnvio, eq(colonias.zonaId, zonasEnvio.id))
@@ -41,5 +45,7 @@ export async function buscarColonias(texto: string): Promise<ColoniaEncontrada[]
     cp: f.cp,
     conCobertura: f.zonaActiva === true,
     costoCentavos: f.zonaActiva ? f.costoCentavos : null,
+    latitud: f.latitud,
+    longitud: f.longitud,
   }))
 }

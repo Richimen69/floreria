@@ -169,6 +169,13 @@
       "when": 1795106032362,
       "tag": "0023_mercado-pago",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1795126293183,
+      "tag": "0024_coordenadas-colonias",
+      "breakpoints": true
     }
   ]
 }

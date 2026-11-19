@@ -1,4 +1,4 @@
-import { boolean, index, integer, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { boolean, index, integer, pgTable, serial, text, timestamp, uniqueIndex, doublePrecision } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 export const zonasEnvio = pgTable('zonas_envio', {
   id: serial('id').primaryKey(),
@@ -23,6 +23,8 @@ export const colonias = pgTable(
     cp: text('cp').notNull(),
     // Sin zona = sin cobertura
     zonaId: integer('zona_id').references(() => zonasEnvio.id, { onDelete: 'set null' }),
+    latitud: doublePrecision('latitud'),
+    longitud: doublePrecision('longitud'),
     creadoEn: timestamp('creado_en', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
